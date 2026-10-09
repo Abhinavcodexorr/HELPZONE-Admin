@@ -27,26 +27,26 @@ export function CategoryBreakdown() {
   if (entries.length === 0) {
     return (
       <Card className="p-5">
-        <h3 className="text-sm font-semibold text-gray-900">Providers by Category</h3>
-        <p className="mb-4 text-xs text-gray-500">Distribution across service types</p>
-        <p className="py-6 text-center text-sm text-gray-400">No providers yet</p>
+        <h3 className="text-sm font-semibold text-foreground">Providers by Category</h3>
+        <p className="mb-4 text-xs text-muted">Distribution across service types</p>
+        <p className="py-6 text-center text-sm text-subtle">No providers yet</p>
       </Card>
     );
   }
 
   return (
     <Card className="p-5">
-      <h3 className="text-sm font-semibold text-gray-900">Providers by Category</h3>
-      <p className="mb-4 text-xs text-gray-500">Distribution across service types</p>
+      <h3 className="text-sm font-semibold text-foreground">Providers by Category</h3>
+      <p className="mb-4 text-xs text-muted">Distribution across service types</p>
 
       <div className="space-y-3">
         {entries.map(([category, count]) => (
           <div key={category}>
             <div className="mb-1 flex items-center justify-between text-xs">
-              <span className="font-medium text-gray-700">{category}</span>
-              <span className="text-gray-400">{count}</span>
+              <span className="font-medium text-fg-2">{category}</span>
+              <span className="text-subtle">{count}</span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-surface-3">
               <div
                 className="h-full rounded-full"
                 style={{

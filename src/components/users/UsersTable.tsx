@@ -1,14 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { users } from "@/data/users";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Card } from "@/components/ui/Card";
 import { formatDate } from "@/lib/utils";
 import { MoreVertical } from "lucide-react";
-import { UserStatus } from "@/types";
+import { User, UserStatus } from "@/types";
 
 const statusTone: Record<UserStatus, "green" | "gray" | "red"> = {
   active: "green",
@@ -23,7 +22,7 @@ const filters: { label: string; value: UserStatus | "all" }[] = [
   { label: "Suspended", value: "suspended" },
 ];
 
-export function UsersTable() {
+export function UsersTable({ users }: { users: User[] }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<UserStatus | "all">("all");
 
@@ -36,7 +35,7 @@ export function UsersTable() {
       const matchesStatus = status === "all" || u.status === status;
       return matchesQuery && matchesStatus;
     });
-  }, [query, status]);
+  }, [users, query, status]);
 
   return (
     <Card>
@@ -49,7 +48,7 @@ export function UsersTable() {
               className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                 status === f.value
                   ? "bg-primary text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "bg-surface-3 text-fg-2 hover:bg-border"
               }`}
             >
               {f.label}
@@ -62,7 +61,7 @@ export function UsersTable() {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
-            <tr className="border-b border-border text-xs uppercase tracking-wide text-gray-400">
+            <tr className="border-b border-border bg-surface-2 text-xs uppercase tracking-wide text-subtle">
               <th className="px-4 py-3 font-medium">User</th>
               <th className="px-4 py-3 font-medium">Contact</th>
               <th className="px-4 py-3 font-medium">City</th>
@@ -74,28 +73,28 @@ export function UsersTable() {
           </thead>
           <tbody>
             {filtered.map((u) => (
-              <tr key={u.id} className="border-b border-border last:border-0 hover:bg-gray-50">
+              <tr key={u.id} className="border-b border-border last:border-0 hover:bg-surface-2">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <Avatar name={u.name} color={u.avatarColor} />
                     <div>
-                      <p className="font-medium text-gray-900">{u.name}</p>
-                      <p className="text-xs text-gray-400">{u.id}</p>
+                      <p className="font-medium text-foreground">{u.name}</p>
+                      <p className="text-xs text-subtle">{u.id}</p>
                     </div>
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <p className="text-gray-700">{u.email}</p>
-                  <p className="text-xs text-gray-400">{u.phone}</p>
+                  <p className="text-fg-2">{u.email}</p>
+                  <p className="text-xs text-subtle">{u.phone}</p>
                 </td>
-                <td className="px-4 py-3 text-gray-700">{u.city}</td>
-                <td className="px-4 py-3 text-gray-700">{u.bookings}</td>
-                <td className="px-4 py-3 text-gray-500">{formatDate(u.joinedAt)}</td>
+                <td className="px-4 py-3 text-fg-2">{u.city}</td>
+                <td className="px-4 py-3 text-fg-2">{u.bookings}</td>
+                <td className="px-4 py-3 text-muted">{formatDate(u.joinedAt)}</td>
                 <td className="px-4 py-3">
                   <Badge tone={statusTone[u.status]}>{u.status}</Badge>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+                  <button className="rounded-lg p-1.5 text-subtle hover:bg-surface-3 hover:text-foreground">
                     <MoreVertical className="h-4 w-4" />
                   </button>
                 </td>
@@ -103,7 +102,7 @@ export function UsersTable() {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">
+                <td colSpan={7} className="px-4 py-10 text-center text-sm text-subtle">
                   No users match your filters.
                 </td>
               </tr>
@@ -112,7 +111,7 @@ export function UsersTable() {
         </table>
       </div>
 
-      <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-gray-500">
+      <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted">
         <span>
           Showing {filtered.length} of {users.length} users
         </span>

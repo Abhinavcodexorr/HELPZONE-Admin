@@ -14,14 +14,14 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-gray-600">{label}</span>
+      <span className="mb-1 block text-xs font-medium text-fg-2">{label}</span>
       {children}
     </label>
   );
 }
 
 const inputClass =
-  "w-full rounded-lg border border-border px-3 py-2 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
+  "w-full rounded-lg border border-border px-3 py-2 text-sm text-fg-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 export function EditProviderModal({
   provider,
@@ -70,19 +70,19 @@ export function EditProviderModal({
       <div className="absolute inset-0 bg-black/40" onClick={saving ? undefined : onClose} />
       <form
         onSubmit={handleSubmit}
-        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
+        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-surface p-6 shadow-xl"
       >
         <button
           type="button"
           onClick={onClose}
           disabled={saving}
-          className="absolute right-4 top-4 rounded-lg p-1 text-gray-400 hover:bg-gray-100 disabled:opacity-50"
+          className="absolute right-4 top-4 rounded-lg p-1 text-subtle hover:bg-surface-3 disabled:opacity-50"
         >
           <X className="h-4 w-4" />
         </button>
 
-        <h3 className="text-base font-semibold text-gray-900">Edit provider</h3>
-        <p className="mt-1 text-sm text-gray-500">{provider.id}</p>
+        <h3 className="text-base font-semibold text-foreground">Edit provider</h3>
+        <p className="mt-1 text-sm text-muted">Update the details submitted by {provider.fullName}.</p>
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
@@ -187,7 +187,7 @@ export function EditProviderModal({
           </div>
         </div>
 
-        {error && <p className="mt-4 text-xs text-rose-600">{error}</p>}
+        {error && <p className="mt-4 text-xs text-danger">{error}</p>}
 
         <div className="mt-6 flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>

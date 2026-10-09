@@ -2,27 +2,37 @@
 
 import { useState } from "react";
 import { Provider } from "@/types";
+import { Avatar } from "@/components/ui/Avatar";
 import { ImageLightbox } from "./ImageLightbox";
 
 export function PhotoThumbnail({ provider }: { provider: Provider }) {
   const [open, setOpen] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const src = provider.kyc.photoImage;
+
+  if (!src || failed) {
+    return <Avatar name={provider.fullName} color={provider.avatarColor} size={44} />;
+  }
 
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="rounded-lg p-1 -ml-1 hover:bg-gray-100"
+        aria-label={`View ${provider.fullName}'s photo`}
+        className="block rounded-xl transition-transform hover:scale-105"
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={provider.kyc.photoImage}
+          src={src}
           alt={`${provider.fullName} photo`}
-          className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-border"
+          onError={() => setFailed(true)}
+          className="h-11 w-11 rounded-xl object-cover ring-1 ring-border"
         />
       </button>
 
       {open && (
         <ImageLightbox
-          src={provider.kyc.photoImage}
+          src={src}
           alt={`${provider.fullName} photo`}
           caption={`${provider.fullName} · applicant photo`}
           onClose={() => setOpen(false)}

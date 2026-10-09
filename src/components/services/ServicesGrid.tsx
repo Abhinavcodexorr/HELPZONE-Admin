@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { services as initialServices } from "@/data/services";
 import { ServiceCard } from "./ServiceCard";
 import { Button } from "@/components/ui/Button";
 import { Plus } from "lucide-react";
+import type { Service } from "@/types";
 
-export function ServicesGrid() {
+export function ServicesGrid({ initialServices }: { initialServices: Service[] }) {
   const [services, setServices] = useState(initialServices);
 
   function toggle(id: string) {

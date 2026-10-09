@@ -1,31 +1,161 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f5f6fa;
-  --foreground: #111827;
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ---------- Light theme (default) ---------- */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  --background: #f3f6fc;
   --surface: #ffffff;
-  --border: #e5e7eb;
-  --sidebar: #111827;
-  --primary: #4f46e5;
+  --surface-2: #f7f9fd;
+  --surface-3: #edf1f9;
+  --border: #e2e8f3;
+
+  --foreground: #0f172a;
+  --fg-2: #334155;
+  --muted: #64748b;
+  --subtle: #94a3b8;
+
+  --primary: #2563eb;
+  --primary-soft: #e6efff;
   --primary-foreground: #ffffff;
+
+  --sidebar: #ffffff;
+  --sidebar-fg: #52607a;
+  --sidebar-hover: #f1f5fb;
+
+  --success: #0f7a43;
+  --success-soft: #e5f7ee;
+  --success-solid: #16a34a;
+  --warning: #9a5b00;
+  --warning-soft: #fff3da;
+  --danger: #c0243c;
+  --danger-soft: #ffe8ec;
+  --danger-solid: #dc2646;
+  --info: #1d5fd1;
+  --info-soft: #e4f0ff;
+  --accent: #5b3fd6;
+  --accent-soft: #eeeafe;
+  --neutral: #52607a;
+  --neutral-soft: #edf1f7;
+
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.04);
+  --scrollbar: #cbd5e1;
+}
+
+/* ---------- Dark theme ---------- */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --background: #0a0e1a;
+  --surface: #111729;
+  --surface-2: #151c33;
+  --surface-3: #1c2540;
+  --border: #232c47;
+
+  --foreground: #e8ecf6;
+  --fg-2: #c3cbe0;
+  --muted: #8f9bb8;
+  --subtle: #66718f;
+
+  --primary: #5b8cff;
+  --primary-soft: #182648;
+  --primary-foreground: #ffffff;
+
+  --sidebar: #0d1222;
+  --sidebar-fg: #9aa6c4;
+  --sidebar-hover: #151c33;
+
+  --success: #4ade9a;
+  --success-soft: #0f2a1f;
+  --success-solid: #16a34a;
+  --warning: #fbbf24;
+  --warning-soft: #2d2310;
+  --danger: #fb7185;
+  --danger-soft: #331219;
+  --danger-solid: #e11d48;
+  --info: #7db3ff;
+  --info-soft: #12264a;
+  --accent: #b4a4ff;
+  --accent-soft: #231d4d;
+  --neutral: #aab4cf;
+  --neutral-soft: #1c2340;
+
+  --shadow-card: 0 0 0 rgba(0, 0, 0, 0);
+  --scrollbar: #2c3657;
 }
 
 @theme inline {
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --color-border: var(--border);
-  --color-sidebar: var(--sidebar);
+
+  --color-foreground: var(--foreground);
+  --color-fg-2: var(--fg-2);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+
   --color-primary: var(--primary);
+  --color-primary-soft: var(--primary-soft);
   --color-primary-foreground: var(--primary-foreground);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-fg: var(--sidebar-fg);
+  --color-sidebar-hover: var(--sidebar-hover);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-solid: var(--success-solid);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-solid: var(--danger-solid);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-neutral: var(--neutral);
+  --color-neutral-soft: var(--neutral-soft);
+
+  --shadow-card: var(--shadow-card);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  ::selection {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  input,
+  select,
+  textarea {
+    background-color: var(--surface);
+    color: var(--foreground);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--subtle);
+  }
 }
 
 ::-webkit-scrollbar {
@@ -34,7 +164,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: var(--scrollbar);
   border-radius: 999px;
 }
 

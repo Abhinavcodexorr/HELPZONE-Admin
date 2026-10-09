@@ -18,16 +18,16 @@ export function RejectModal({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <div className="relative w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl">
         <button
           onClick={onCancel}
-          className="absolute right-4 top-4 rounded-lg p-1 text-gray-400 hover:bg-gray-100"
+          className="absolute right-4 top-4 rounded-lg p-1 text-subtle hover:bg-surface-3"
         >
           <X className="h-4 w-4" />
         </button>
-        <h3 className="text-base font-semibold text-gray-900">Reject application</h3>
-        <p className="mt-1 text-sm text-gray-500">
-          Let <span className="font-medium text-gray-700">{providerName}</span> know why their
+        <h3 className="text-base font-semibold text-foreground">Reject application</h3>
+        <p className="mt-1 text-sm text-muted">
+          Let <span className="font-medium text-fg-2">{providerName}</span> know why their
           KYC documents were rejected so they can resubmit.
         </p>
         <textarea

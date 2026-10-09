@@ -1,5 +1,10 @@
+import { Users } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { UsersTable } from "@/components/users/UsersTable";
+import type { User } from "@/types";
+
+const users: User[] = [];
 
 export default function UsersPage() {
   return (
@@ -8,7 +13,15 @@ export default function UsersPage() {
         title="Users"
         description="Customers who book maids, cooks and other service providers"
       />
-      <UsersTable />
+      {users.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="No users yet"
+          description="Customer accounts will appear here once the users API is connected."
+        />
+      ) : (
+        <UsersTable users={users} />
+      )}
     </div>
   );
 }

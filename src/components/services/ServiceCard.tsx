@@ -16,26 +16,26 @@ export function ServiceCard({
   return (
     <Card className="flex flex-col p-5">
       <div className="flex items-start justify-between">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent-soft text-accent">
           <ServiceIcon name={service.icon} className="h-5 w-5" />
         </div>
         <button
           onClick={() => onToggle(service.id)}
           className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-            service.isActive ? "bg-emerald-500" : "bg-gray-200"
+            service.isActive ? "bg-success-solid" : "bg-border"
           }`}
           aria-label="Toggle service active"
         >
           <span
-            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-              service.isActive ? "translate-x-5" : "translate-x-0.5"
+            className={`absolute left-0 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+              service.isActive ? "translate-x-[22px]" : "translate-x-0.5"
             }`}
           />
         </button>
       </div>
 
-      <h3 className="mt-4 text-sm font-semibold text-gray-900">{service.name}</h3>
-      <p className="mt-1 line-clamp-2 text-xs text-gray-500">{service.description}</p>
+      <h3 className="mt-4 text-sm font-semibold text-foreground">{service.name}</h3>
+      <p className="mt-1 line-clamp-2 text-xs text-muted">{service.description}</p>
 
       <div className="mt-3 flex items-center gap-2">
         <Badge tone="indigo">{service.category}</Badge>
@@ -44,7 +44,7 @@ export function ServiceCard({
         </Badge>
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-border pt-4 text-xs text-gray-500">
+      <div className="mt-4 flex items-center justify-between border-t border-border pt-4 text-xs text-muted">
         <div className="flex items-center gap-1.5">
           <Users className="h-3.5 w-3.5" />
           {service.activeProviders} providers
@@ -55,9 +55,9 @@ export function ServiceCard({
         </div>
       </div>
 
-      <div className="mt-3 text-sm font-semibold text-gray-900">
+      <div className="mt-3 text-sm font-semibold text-foreground">
         ₹{service.basePrice.toLocaleString("en-IN")}
-        <span className="text-xs font-normal text-gray-400"> / {service.priceUnit}</span>
+        <span className="text-xs font-normal text-subtle"> / {service.priceUnit}</span>
       </div>
     </Card>
   );

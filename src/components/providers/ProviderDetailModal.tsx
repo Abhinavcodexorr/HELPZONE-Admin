@@ -34,10 +34,10 @@ export function ProviderDetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-surface p-6 shadow-xl">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-gray-400 hover:bg-gray-100"
+          className="absolute right-4 top-4 rounded-lg p-1 text-subtle hover:bg-surface-3"
         >
           <X className="h-4 w-4" />
         </button>
@@ -46,11 +46,11 @@ export function ProviderDetailModal({
           <Avatar name={p.fullName} color={p.avatarColor} size={48} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-base font-semibold text-gray-900">{p.fullName}</p>
+              <p className="text-base font-semibold text-foreground">{p.fullName}</p>
               <Badge tone={statusTone[p.status]}>{p.status}</Badge>
             </div>
-            <p className="text-xs text-gray-400">
-              {p.id} &middot; {p.gender} &middot; {p.nationality}
+            <p className="text-xs text-subtle">
+              {p.gender} &middot; {p.nationality}
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <Badge tone="indigo">{p.category}</Badge>
@@ -60,35 +60,35 @@ export function ProviderDetailModal({
         </div>
 
         {/* Contact & location */}
-        <div className="mt-5 grid grid-cols-1 gap-2 rounded-xl bg-gray-50 p-3 text-sm sm:grid-cols-2">
-          <p className="flex items-center gap-2 text-gray-600">
-            <MapPin className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+        <div className="mt-5 grid grid-cols-1 gap-2 rounded-xl bg-surface-2 p-3 text-sm sm:grid-cols-2">
+          <p className="flex items-center gap-2 text-fg-2">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-subtle" />
             {p.area}, {p.city}
           </p>
-          <p className="flex items-center gap-2 text-gray-600">
-            <Mail className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+          <p className="flex items-center gap-2 text-fg-2">
+            <Mail className="h-3.5 w-3.5 shrink-0 text-subtle" />
             <span className="truncate">{p.email}</span>
           </p>
-          <p className="flex items-center gap-2 text-gray-600">
-            <Phone className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+          <p className="flex items-center gap-2 text-fg-2">
+            <Phone className="h-3.5 w-3.5 shrink-0 text-subtle" />
             {p.mobileNumber}
           </p>
-          <p className="flex items-center gap-2 text-gray-600">
-            <MessageCircle className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+          <p className="flex items-center gap-2 text-fg-2">
+            <MessageCircle className="h-3.5 w-3.5 shrink-0 text-subtle" />
             {p.whatsappNumber}
           </p>
-          <p className="flex items-center gap-2 text-gray-600">
-            <Briefcase className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+          <p className="flex items-center gap-2 text-fg-2">
+            <Briefcase className="h-3.5 w-3.5 shrink-0 text-subtle" />
             {p.experienceYears} {p.experienceYears === 1 ? "year" : "years"} experience
           </p>
-          <p className="flex items-center gap-2 text-gray-600">
-            <Calendar className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+          <p className="flex items-center gap-2 text-fg-2">
+            <Calendar className="h-3.5 w-3.5 shrink-0 text-subtle" />
             Applied {formatDate(p.submittedAt)}
           </p>
         </div>
 
         {/* KYC documents */}
-        <p className="mb-2 mt-5 text-xs font-bold uppercase tracking-wider text-gray-400">
+        <p className="mb-2 mt-5 text-xs font-bold uppercase tracking-wider text-subtle">
           KYC Documents
         </p>
         <div className="grid grid-cols-2 gap-3">
@@ -113,8 +113,8 @@ export function ProviderDetailModal({
                 <ZoomIn className="h-5 w-5 text-white" />
               </span>
             </button>
-            <p className="mt-1.5 text-xs font-medium text-gray-700">{p.kyc.idType}</p>
-            <p className="text-[11px] text-gray-400">{p.kyc.idNumber}</p>
+            <p className="mt-1.5 text-xs font-medium text-fg-2">{p.kyc.idType}</p>
+            <p className="text-[11px] text-subtle">{p.kyc.idNumber}</p>
           </div>
           <div>
             <button
@@ -137,13 +137,13 @@ export function ProviderDetailModal({
                 <ZoomIn className="h-5 w-5 text-white" />
               </span>
             </button>
-            <p className="mt-1.5 text-xs font-medium text-gray-700">Applicant Photo</p>
-            <p className="text-[11px] text-gray-400">Submitted {formatDate(p.submittedAt)}</p>
+            <p className="mt-1.5 text-xs font-medium text-fg-2">Applicant Photo</p>
+            <p className="text-[11px] text-subtle">Submitted {formatDate(p.submittedAt)}</p>
           </div>
         </div>
 
         {p.status === "rejected" && p.rejectionReason && (
-          <p className="mt-4 flex items-start gap-2 rounded-lg bg-rose-50 p-2.5 text-xs text-rose-700">
+          <p className="mt-4 flex items-start gap-2 rounded-lg bg-danger-soft p-2.5 text-xs text-danger">
             <FileWarning className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
               <span className="font-medium">Reason: </span>

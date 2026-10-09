@@ -7,32 +7,53 @@ import { ImageLightbox } from "./ImageLightbox";
 
 export function IdProofThumbnail({ provider }: { provider: Provider }) {
   const [open, setOpen] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const { idType, idNumber, idDocumentImage } = provider.kyc;
+  const hasImage = Boolean(idDocumentImage) && !failed;
+
+  const label = (
+    <div className="min-w-0 text-left">
+      <p className="flex items-center gap-1 text-xs font-semibold text-fg-2 group-hover:text-primary">
+        <IdCard className="h-3 w-3 shrink-0" />
+        <span className="truncate">{idType}</span>
+      </p>
+      <p className="truncate text-[11px] tabular-nums text-subtle">{idNumber}</p>
+    </div>
+  );
+
+  if (!hasImage) {
+    return (
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-11 w-16 shrink-0 items-center justify-center rounded-lg bg-surface-3 text-subtle ring-1 ring-border">
+          <IdCard className="h-5 w-5" />
+        </span>
+        {label}
+      </div>
+    );
+  }
 
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="group flex items-center gap-2 rounded-lg p-1 -ml-1 hover:bg-gray-100"
+        aria-label={`View ${provider.fullName}'s ${idType}`}
+        className="group flex items-center gap-2.5 rounded-lg text-left"
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={provider.kyc.idDocumentImage}
-          alt={`${provider.fullName} ${provider.kyc.idType}`}
-          className="h-10 w-14 shrink-0 rounded-md object-cover ring-1 ring-border"
+          src={idDocumentImage}
+          alt={`${provider.fullName} ${idType}`}
+          onError={() => setFailed(true)}
+          className="h-11 w-16 shrink-0 rounded-lg object-cover ring-1 ring-border transition-transform group-hover:scale-105"
         />
-        <div className="text-left">
-          <p className="flex items-center gap-1 text-xs font-medium text-gray-700 group-hover:text-primary">
-            <IdCard className="h-3 w-3" />
-            {provider.kyc.idType}
-          </p>
-          <p className="text-[11px] text-gray-400">{provider.kyc.idNumber}</p>
-        </div>
+        {label}
       </button>
 
       {open && (
         <ImageLightbox
-          src={provider.kyc.idDocumentImage}
-          alt={`${provider.fullName} ${provider.kyc.idType}`}
-          caption={`${provider.kyc.idType} · ${provider.kyc.idNumber}`}
+          src={idDocumentImage}
+          alt={`${provider.fullName} ${idType}`}
+          caption={`${idType} · ${idNumber}`}
           onClose={() => setOpen(false)}
         />
       )}
