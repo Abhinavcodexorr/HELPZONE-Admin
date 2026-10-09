@@ -3,10 +3,10 @@
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { formatDate } from "@/lib/utils";
-import { Check, MessageCircle, Phone, X } from "lucide-react";
+import { MessageCircle, Phone } from "lucide-react";
 import { ProviderStatus } from "@/types";
 import { useProviders } from "@/store/ProvidersContext";
 import { IdProofThumbnail } from "./IdProofThumbnail";
@@ -33,7 +33,6 @@ const statusTabs: { label: string; value: ProviderStatus | "all" }[] = [
 export function ProvidersTable() {
   const { providers, loading, error, refresh, approve, reject, update, remove } = useProviders();
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string>("All");
   const [status, setStatus] = useState<ProviderStatus | "all">("all");
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -41,11 +40,6 @@ export function ProvidersTable() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-
-  const categories = useMemo(
-    () => Array.from(new Set(providers.map((p) => p.category))).sort(),
-    [providers]
-  );
 
   async function runAction(id: string, action: () => Promise<void>, fallback: string) {
     setActionError(null);
@@ -80,11 +74,10 @@ export function ProvidersTable() {
         p.email.toLowerCase().includes(query.toLowerCase()) ||
         p.city.toLowerCase().includes(query.toLowerCase()) ||
         p.kyc.idNumber.toLowerCase().includes(query.toLowerCase());
-      const matchesCategory = category === "All" || p.category === category;
       const matchesStatus = status === "all" || p.status === status;
-      return matchesQuery && matchesCategory && matchesStatus;
+      return matchesQuery && matchesStatus;
     });
-  }, [providers, query, category, status]);
+  }, [providers, query, status]);
 
   const viewingProvider = providers.find((p) => p.id === viewingId);
   const rejectingProvider = providers.find((p) => p.id === rejectingId);
@@ -94,44 +87,28 @@ export function ProvidersTable() {
   return (
     <Card>
       <div className="flex flex-col gap-3 border-b border-border p-4">
-        {categories.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {categories.map((c) => (
-              <button
-                key={c}
-                onClick={() => setCategory((prev) => (prev === c ? "All" : c))}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  category === c
-                    ? "bg-primary text-white"
-                    : "bg-surface-3 text-fg-2 hover:bg-border"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        )}
-
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-1.5 overflow-x-auto">
             {statusTabs.map((t) => (
               <button
                 key={t.value}
                 onClick={() => setStatus(t.value)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 active:scale-95 ${
                   status === t.value
-                    ? "bg-foreground text-background"
+                    ? "bg-foreground text-background shadow-sm"
                     : "bg-surface-3 text-fg-2 hover:bg-border"
                 }`}
               >
                 {t.label}
-                <span
-                  className={`rounded-full px-1.5 py-0.5 text-[10px] ${
-                    status === t.value ? "bg-background/25" : "bg-surface-3 text-muted"
-                  }`}
-                >
-                  {counts[t.value]}
-                </span>
+                {!loading && (
+                  <span
+                    className={`animate-fade-in rounded-full px-1.5 py-0.5 text-[10px] ${
+                      status === t.value ? "bg-background/25" : "bg-surface text-muted"
+                    }`}
+                  >
+                    {counts[t.value]}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -156,11 +133,8 @@ export function ProvidersTable() {
         </div>
       )}
 
-      {loading ? (
-        <div className="px-4 py-10 text-center text-sm text-subtle">Loading providers…</div>
-      ) : (
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1220px] text-left text-sm">
+        <table className="w-full min-w-[1120px] text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-surface-2 text-xs uppercase tracking-wide text-subtle">
               <th className="w-20 px-4 py-3 font-medium">Photo</th>
@@ -170,20 +144,37 @@ export function ProvidersTable() {
               <th className="min-w-[210px] px-4 py-3 font-medium">Contact</th>
               <th className="min-w-[190px] px-4 py-3 font-medium">ID Proof</th>
               <th className="min-w-[120px] px-4 py-3 font-medium">Status</th>
-              <th className="min-w-[230px] px-4 py-3 text-right font-medium">Actions</th>
+              <th className="min-w-[130px] px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p) => {
+            {loading &&
+              Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
+            {!loading && filtered.map((p, index) => {
               const busy = busyId === p.id;
               const showWhatsapp = p.whatsappNumber !== "—" && p.whatsappNumber !== p.mobileNumber;
               return (
-                <tr key={p.id} className="border-b border-border align-middle last:border-0 hover:bg-surface-2">
+                <tr
+                  key={p.id}
+                  style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+                  tabIndex={0}
+                  onClick={(e) => {
+                    // Ignore clicks from portaled UI (lightbox, menu) that bubble up through React,
+                    // and from the row's own buttons.
+                    const target = e.target as HTMLElement;
+                    if (!e.currentTarget.contains(target) || target.closest("button, a")) return;
+                    setViewingId(p.id);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.target === e.currentTarget) setViewingId(p.id);
+                  }}
+                  className="group animate-fade-in cursor-pointer border-b border-border align-middle transition-colors last:border-0 hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none"
+                >
                   <td className="px-4 py-3.5">
                     <PhotoThumbnail provider={p} />
                   </td>
                   <td className="px-4 py-3.5">
-                    <p className="whitespace-nowrap font-semibold text-foreground">{p.fullName}</p>
+                    <p className="whitespace-nowrap font-semibold text-foreground transition-colors group-hover:text-primary">{p.fullName}</p>
                     <p className="whitespace-nowrap text-xs text-muted">
                       {p.gender} &middot; {p.nationality}
                     </p>
@@ -229,32 +220,13 @@ export function ProvidersTable() {
                     )}
                   </td>
                   <td className="px-4 py-3.5">
-                    <div className="flex items-center justify-end gap-1.5">
-                      {p.status === "pending" && (
-                        <>
-                          <Button
-                            variant="success"
-                            size="sm"
-                            disabled={busy}
-                            onClick={() => handleApprove(p.id)}
-                          >
-                            <Check className="h-3.5 w-3.5" />
-                            {busy ? "Working…" : "Approve"}
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            disabled={busy}
-                            className="text-danger hover:bg-danger-soft"
-                            onClick={() => setRejectingId(p.id)}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                            Reject
-                          </Button>
-                        </>
-                      )}
+                    <div className="flex justify-end">
                       <ActionsMenu
+                        canApprove={p.status === "pending"}
+                        busy={busy}
                         onView={() => setViewingId(p.id)}
+                        onApprove={() => handleApprove(p.id)}
+                        onReject={() => setRejectingId(p.id)}
                         onEdit={() => setEditingId(p.id)}
                         onDelete={() => setDeletingId(p.id)}
                       />
@@ -263,7 +235,7 @@ export function ProvidersTable() {
                 </tr>
               );
             })}
-            {filtered.length === 0 && (
+            {!loading && filtered.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-4 py-12 text-center text-sm text-subtle">
                   {providers.length === 0
@@ -275,12 +247,15 @@ export function ProvidersTable() {
           </tbody>
         </table>
       </div>
-      )}
 
       <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted">
-        <span>
-          Showing {filtered.length} of {providers.length} providers
-        </span>
+        {loading ? (
+          <Skeleton className="h-3.5 w-40" />
+        ) : (
+          <span>
+            Showing {filtered.length} of {providers.length} providers
+          </span>
+        )}
       </div>
 
       {viewingProvider && (
@@ -322,5 +297,49 @@ export function ProvidersTable() {
         />
       )}
     </Card>
+  );
+}
+
+function SkeletonRow() {
+  return (
+    <tr className="border-b border-border align-middle last:border-0">
+      <td className="px-4 py-3.5">
+        <Skeleton className="h-11 w-11 rounded-xl" />
+      </td>
+      <td className="px-4 py-3.5">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="mt-2 h-3 w-20" />
+        <Skeleton className="mt-1.5 h-3 w-24" />
+      </td>
+      <td className="px-4 py-3.5">
+        <Skeleton className="h-6 w-16 rounded-full" />
+        <Skeleton className="mt-2 h-3 w-24" />
+      </td>
+      <td className="px-4 py-3.5">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="mt-2 h-3 w-14" />
+      </td>
+      <td className="px-4 py-3.5">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="mt-2 h-3 w-36" />
+      </td>
+      <td className="px-4 py-3.5">
+        <div className="flex items-center gap-2.5">
+          <Skeleton className="h-11 w-16 rounded-lg" />
+          <div className="space-y-2">
+            <Skeleton className="h-3.5 w-20" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3.5">
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </td>
+      <td className="px-4 py-3.5">
+        <div className="flex justify-end">
+          <Skeleton className="h-8 w-24 rounded-lg" />
+        </div>
+      </td>
+    </tr>
   );
 }

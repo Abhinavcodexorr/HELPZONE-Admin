@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Provider } from "@/types";
 import { Avatar } from "@/components/ui/Avatar";
+import { ShimmerImage } from "@/components/ui/ShimmerImage";
 import { ImageLightbox } from "./ImageLightbox";
 
 export function PhotoThumbnail({ provider }: { provider: Provider }) {
@@ -19,14 +20,13 @@ export function PhotoThumbnail({ provider }: { provider: Provider }) {
       <button
         onClick={() => setOpen(true)}
         aria-label={`View ${provider.fullName}'s photo`}
-        className="block rounded-xl transition-transform hover:scale-105"
+        className="block rounded-xl transition-transform duration-200 hover:scale-105 active:scale-95"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <ShimmerImage
           src={src}
           alt={`${provider.fullName} photo`}
           onError={() => setFailed(true)}
-          className="h-11 w-11 rounded-xl object-cover ring-1 ring-border"
+          wrapperClassName="h-11 w-11 rounded-xl ring-1 ring-border"
         />
       </button>
 

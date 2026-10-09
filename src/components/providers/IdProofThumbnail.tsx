@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Provider } from "@/types";
 import { IdCard } from "lucide-react";
+import { ShimmerImage } from "@/components/ui/ShimmerImage";
 import { ImageLightbox } from "./ImageLightbox";
 
 export function IdProofThumbnail({ provider }: { provider: Provider }) {
@@ -39,12 +40,11 @@ export function IdProofThumbnail({ provider }: { provider: Provider }) {
         aria-label={`View ${provider.fullName}'s ${idType}`}
         className="group flex items-center gap-2.5 rounded-lg text-left"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <ShimmerImage
           src={idDocumentImage}
           alt={`${provider.fullName} ${idType}`}
           onError={() => setFailed(true)}
-          className="h-11 w-16 shrink-0 rounded-lg object-cover ring-1 ring-border transition-transform group-hover:scale-105"
+          wrapperClassName="h-11 w-16 shrink-0 rounded-lg ring-1 ring-border transition-transform duration-200 group-hover:scale-105"
         />
         {label}
       </button>

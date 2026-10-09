@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { RejectModal } from "./RejectModal";
+import { ShimmerImage } from "@/components/ui/ShimmerImage";
 import { ImageLightbox } from "./ImageLightbox";
 import { formatDate } from "@/lib/utils";
 import { Check, X, Mail, Phone, MessageCircle, MapPin, FileWarning, Briefcase, Calendar, ZoomIn } from "lucide-react";
@@ -33,8 +34,8 @@ export function ProviderDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-surface p-6 shadow-xl">
+      <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="relative max-h-[90vh] w-full max-w-lg animate-pop-in overflow-y-auto rounded-2xl bg-surface p-6 shadow-xl">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 rounded-lg p-1 text-subtle hover:bg-surface-3"
@@ -104,10 +105,11 @@ export function ProviderDetailModal({
               }
               className="group relative block w-full"
             >
-              <img
+              <ShimmerImage
                 src={p.kyc.idDocumentImage}
                 alt={`${p.fullName} ${p.kyc.idType}`}
-                className="h-28 w-full rounded-xl object-cover ring-1 ring-border transition-opacity group-hover:opacity-90"
+                wrapperClassName="h-28 w-full rounded-xl ring-1 ring-border"
+                imgClassName="transition-all duration-300 group-hover:scale-105"
               />
               <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/0 opacity-0 transition-all group-hover:bg-black/30 group-hover:opacity-100">
                 <ZoomIn className="h-5 w-5 text-white" />
@@ -128,10 +130,11 @@ export function ProviderDetailModal({
               }
               className="group relative block w-full"
             >
-              <img
+              <ShimmerImage
                 src={p.kyc.photoImage}
                 alt={`${p.fullName} photo`}
-                className="h-28 w-full rounded-xl object-cover ring-1 ring-border transition-opacity group-hover:opacity-90"
+                wrapperClassName="h-28 w-full rounded-xl ring-1 ring-border"
+                imgClassName="transition-all duration-300 group-hover:scale-105"
               />
               <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/0 opacity-0 transition-all group-hover:bg-black/30 group-hover:opacity-100">
                 <ZoomIn className="h-5 w-5 text-white" />

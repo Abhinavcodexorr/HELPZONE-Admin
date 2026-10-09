@@ -43,6 +43,7 @@
 
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.04);
   --scrollbar: #cbd5e1;
+  --shimmer: rgba(255, 255, 255, 0.75);
 }
 
 /* ---------- Dark theme ---------- */
@@ -85,6 +86,46 @@
 
   --shadow-card: 0 0 0 rgba(0, 0, 0, 0);
   --scrollbar: #2c3657;
+  --shimmer: rgba(255, 255, 255, 0.07);
+}
+
+@theme {
+  --animate-fade-in: fade-in 0.22s ease-out backwards;
+  --animate-pop-in: pop-in 0.26s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  --animate-slide-up: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  --animate-grow-x: grow-x 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  --animate-grow-y: grow-y 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  --animate-draw-line: draw-line 1.2s ease-out backwards;
+  --animate-slide-in-left: slide-in-left 0.3s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes grow-x {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  @keyframes grow-y {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+  }
+  @keyframes draw-line {
+    from { stroke-dashoffset: 1; }
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes slide-in-left {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
 }
 
 @theme inline {
@@ -131,13 +172,14 @@
 @layer base {
   * {
     border-color: var(--border);
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+      fill 0.2s ease, stroke 0.2s ease;
   }
 
   body {
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans), Arial, Helvetica, sans-serif;
-    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   ::selection {
@@ -170,4 +212,39 @@
 
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Shimmering placeholder used while data or images load. */
+@layer components {
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--surface-3);
+  }
+
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg, transparent, var(--shimmer), transparent);
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -29,8 +29,8 @@ export function DeleteConfirmModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={deleting ? undefined : onCancel} />
-      <div className="relative w-full max-w-sm rounded-2xl bg-surface p-6 shadow-xl">
+      <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-[2px]" onClick={deleting ? undefined : onCancel} />
+      <div className="relative w-full max-w-sm animate-pop-in rounded-2xl bg-surface p-6 shadow-xl">
         <button
           onClick={onCancel}
           disabled={deleting}

@@ -19,10 +19,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-[2px]"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0">
+          <div className="absolute inset-y-0 left-0 animate-slide-in-left">
             <div className="relative h-full">
               <Sidebar onNavigate={() => setMobileOpen(false)} />
               <button
