@@ -1,9 +1,18 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Bell, Menu } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
+  // Computed after mount so server and client markup match.
+  const [today, setToday] = useState("");
+  useEffect(() => {
+    queueMicrotask(() =>
+      setToday(new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })),
+    );
+  }, []);
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-surface/85 px-4 backdrop-blur sm:px-6">
       <button
@@ -17,6 +26,7 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
       <div className="hidden sm:block">
         <p className="text-sm text-muted">
           Welcome back, <span className="font-semibold text-foreground">Admin</span>
+          {today && <span className="animate-fade-in text-subtle"> &middot; {today}</span>}
         </p>
       </div>
 

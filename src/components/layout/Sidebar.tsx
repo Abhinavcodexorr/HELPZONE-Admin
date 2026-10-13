@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Users, HardHat, Wrench, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useProviders } from "@/store/ProvidersContext";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -14,6 +15,8 @@ const nav = [
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const { providers } = useProviders();
+  const pending = providers.filter((p) => p.status === "pending").length;
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-sidebar">
@@ -47,6 +50,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               )}
               <Icon className="h-[18px] w-[18px]" />
               {label}
+              {href === "/providers" && pending > 0 && (
+                <span
+                  title={`${pending} awaiting review`}
+                  className="ml-auto animate-pop-in rounded-full bg-warning-soft px-2 py-0.5 text-[11px] font-semibold tabular-nums text-warning"
+                >
+                  {pending}
+                </span>
+              )}
             </Link>
           );
         })}

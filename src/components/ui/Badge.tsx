@@ -14,10 +14,12 @@ const toneClasses: Record<BadgeTone, string> = {
 export function Badge({
   children,
   tone = "gray",
+  dot = false,
   className,
 }: {
   children: React.ReactNode;
   tone?: BadgeTone;
+  dot?: boolean;
   className?: string;
 }) {
   return (
@@ -28,6 +30,7 @@ export function Badge({
         className
       )}
     >
+      {dot && <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current" />}
       {children}
     </span>
   );

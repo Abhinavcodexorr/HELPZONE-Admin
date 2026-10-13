@@ -10,6 +10,7 @@ export default function UsersPage() {
   return (
     <div>
       <PageHeader
+        icon={Users}
         title="Users"
         description="Customers who book maids, cooks and other service providers"
       />

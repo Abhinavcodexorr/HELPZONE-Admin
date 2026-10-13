@@ -22,22 +22,58 @@ export type ProviderStatus = "pending" | "approved" | "rejected";
 
 export type IdType = string;
 
+export interface LastJob {
+  jobTitle: string;
+  duration: string;
+  workingCity: string;
+  reasonForLeaving: string;
+  familySize: string;
+  employerNationality: string;
+  salary?: number;
+}
+
+// Text fields the backend leaves unset come through as "" and are rendered as
+// an em dash by the UI, so "not provided" is always visible to the reviewer.
 export interface Provider {
   id: string;
   fullName: string;
   gender: "Male" | "Female";
   nationality: string;
   avatarColor: string;
-  category: ServiceCategory;
-  categoryId: string;
+  categories: string[];
+  categoryIds: string[];
   area: string;
   city: string;
   mobileNumber: string;
   whatsappNumber: string;
   email: string;
+  age?: number;
+  maritalStatus: string;
+  religion: string;
+  languages: string[];
+  skills: string[];
+  bio: string;
+  education: string;
+  certificate: string;
   experienceYears: number;
+  monthlySalary?: number;
+  preferredJob: string;
+  duration: string;
+  availability: string;
+  jobDescription: string;
+  lastJob?: LastJob;
+  hasPassport: boolean;
+  visaStatus: string;
+  visaExpiryDate: string;
+  emirate: string;
+  panNumber: string;
+  hasReferenceLetter: boolean;
+  referenceLetterUrl: string;
+  introVideoUrl: string;
+  profileComplete: boolean;
   isActive: boolean;
   submittedAt: string;
+  updatedAt: string;
   status: ProviderStatus;
   rejectionReason?: string;
   kyc: {
@@ -52,7 +88,7 @@ export interface UpdateProviderInput {
   fullName: string;
   gender: "Male" | "Female";
   nationality: string;
-  categoryId: string;
+  categoryIds: string[];
   area: string;
   city: string;
   mobileNumber: string;

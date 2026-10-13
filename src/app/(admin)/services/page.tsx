@@ -10,6 +10,7 @@ export default function ServicesPage() {
   return (
     <div>
       <PageHeader
+        icon={Wrench}
         title="Services"
         description="Manage the service categories offered on the platform"
       />

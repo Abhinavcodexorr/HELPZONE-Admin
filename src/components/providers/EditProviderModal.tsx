@@ -36,7 +36,7 @@ export function EditProviderModal({
     fullName: provider.fullName,
     gender: provider.gender,
     nationality: provider.nationality,
-    categoryId: provider.categoryId,
+    categoryIds: provider.categoryIds,
     area: provider.area,
     city: provider.city,
     mobileNumber: provider.mobileNumber,
@@ -45,6 +45,8 @@ export function EditProviderModal({
     experienceYears: provider.experienceYears,
     kyc: { idType: provider.kyc.idType, idNumber: provider.kyc.idNumber },
   });
+  // Kept as raw text while typing so commas and spaces aren't swallowed mid-edit.
+  const [categoriesText, setCategoriesText] = useState(provider.categoryIds.join(", "));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,7 +59,11 @@ export function EditProviderModal({
     setSaving(true);
     setError(null);
     try {
-      await onSave(provider.id, form);
+      const categoryIds = categoriesText
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean);
+      await onSave(provider.id, { ...form, categoryIds });
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save changes");
@@ -115,12 +121,12 @@ export function EditProviderModal({
           </Field>
 
           <div className="sm:col-span-2">
-            <Field label="Category">
+            <Field label="Categories (comma separated)">
               <input
                 className={inputClass}
-                value={form.categoryId}
-                onChange={(e) => set("categoryId", e.target.value)}
-                placeholder="e.g. cat-cook"
+                value={categoriesText}
+                onChange={(e) => setCategoriesText(e.target.value)}
+                placeholder="e.g. cat-maid, cat-cook"
               />
             </Field>
           </div>

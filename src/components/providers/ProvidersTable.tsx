@@ -11,6 +11,7 @@ import { ProviderStatus } from "@/types";
 import { useProviders } from "@/store/ProvidersContext";
 import { IdProofThumbnail } from "./IdProofThumbnail";
 import { PhotoThumbnail } from "./PhotoThumbnail";
+import { VideoThumbnail } from "./VideoThumbnail";
 import { ProviderDetailModal } from "./ProviderDetailModal";
 import { RejectModal } from "./RejectModal";
 import { EditProviderModal } from "./EditProviderModal";
@@ -21,6 +22,12 @@ const statusTone: Record<ProviderStatus, "green" | "amber" | "red"> = {
   approved: "green",
   pending: "amber",
   rejected: "red",
+};
+
+const statusDot: Record<ProviderStatus, string> = {
+  approved: "bg-success-solid",
+  pending: "bg-amber-400",
+  rejected: "bg-danger-solid",
 };
 
 const statusTabs: { label: string; value: ProviderStatus | "all" }[] = [
@@ -134,7 +141,7 @@ export function ProvidersTable() {
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1120px] text-left text-sm">
+        <table className="w-full min-w-[1280px] text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-surface-2 text-xs uppercase tracking-wide text-subtle">
               <th className="w-20 px-4 py-3 font-medium">Photo</th>
@@ -143,6 +150,7 @@ export function ProvidersTable() {
               <th className="min-w-[130px] px-4 py-3 font-medium">Location</th>
               <th className="min-w-[210px] px-4 py-3 font-medium">Contact</th>
               <th className="min-w-[190px] px-4 py-3 font-medium">ID Proof</th>
+              <th className="min-w-[150px] px-4 py-3 font-medium">Video</th>
               <th className="min-w-[120px] px-4 py-3 font-medium">Status</th>
               <th className="min-w-[130px] px-4 py-3 text-right font-medium">Actions</th>
             </tr>
@@ -171,7 +179,13 @@ export function ProvidersTable() {
                   className="group animate-fade-in cursor-pointer border-b border-border align-middle transition-colors last:border-0 hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none"
                 >
                   <td className="px-4 py-3.5">
-                    <PhotoThumbnail provider={p} />
+                    <div className="relative w-fit">
+                      <PhotoThumbnail provider={p} />
+                      <span
+                        title={p.status}
+                        className={`absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full ring-2 ring-surface ${statusDot[p.status]}`}
+                      />
+                    </div>
                   </td>
                   <td className="px-4 py-3.5">
                     <p className="whitespace-nowrap font-semibold text-foreground transition-colors group-hover:text-primary">{p.fullName}</p>
@@ -181,7 +195,22 @@ export function ProvidersTable() {
                     <p className="mt-0.5 whitespace-nowrap text-xs text-subtle">Applied {formatDate(p.submittedAt)}</p>
                   </td>
                   <td className="px-4 py-3.5">
-                    <Badge tone="indigo">{p.category}</Badge>
+                    {p.categories.length === 0 ? (
+                      <span className="text-xs text-subtle">No category</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {p.categories.slice(0, 2).map((c) => (
+                          <Badge key={c} tone="indigo">
+                            {c}
+                          </Badge>
+                        ))}
+                        {p.categories.length > 2 && (
+                          <Badge tone="gray" className="px-2" >
+                            +{p.categories.length - 2}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                     <p className="mt-1.5 whitespace-nowrap text-xs text-muted">
                       {p.experienceYears} {p.experienceYears === 1 ? "yr" : "yrs"} experience
                     </p>
@@ -209,7 +238,12 @@ export function ProvidersTable() {
                     <IdProofThumbnail provider={p} />
                   </td>
                   <td className="px-4 py-3.5">
-                    <Badge tone={statusTone[p.status]}>{p.status}</Badge>
+                    <VideoThumbnail provider={p} />
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <Badge tone={statusTone[p.status]} dot>
+                      {p.status}
+                    </Badge>
                     {p.status === "rejected" && p.rejectionReason && (
                       <p
                         className="mt-1.5 max-w-[170px] truncate text-xs text-danger"
@@ -237,7 +271,7 @@ export function ProvidersTable() {
             })}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-sm text-subtle">
+                <td colSpan={9} className="px-4 py-12 text-center text-sm text-subtle">
                   {providers.length === 0
                     ? "No provider applications yet."
                     : "No providers match your filters."}
@@ -330,6 +364,12 @@ function SkeletonRow() {
             <Skeleton className="h-3.5 w-20" />
             <Skeleton className="h-3 w-24" />
           </div>
+        </div>
+      </td>
+      <td className="px-4 py-3.5">
+        <div className="flex items-center gap-2.5">
+          <Skeleton className="h-11 w-16 rounded-lg" />
+          <Skeleton className="h-3.5 w-16" />
         </div>
       </td>
       <td className="px-4 py-3.5">

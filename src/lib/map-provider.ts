@@ -1,4 +1,4 @@
-import { Provider } from "@/types";
+import { LastJob, Provider } from "@/types";
 
 export interface BackendProvider {
   id: string;
@@ -6,23 +6,49 @@ export interface BackendProvider {
   fullName: string;
   gender?: string;
   nationality?: string;
+  // Older records only have the single `categoryId`; newer ones use the array.
+  categoryIds?: string[];
   categoryId?: string;
   area?: string;
   city?: string;
   mobileNumber?: string;
   whatsappNumber?: string;
+  age?: number;
+  maritalStatus?: string;
+  religion?: string;
+  languages?: string[];
+  skills?: string[];
+  bio?: string;
+  education?: string;
+  certificate?: string;
   experienceYears?: number;
+  monthlySalary?: number;
+  monthlySalaryAed?: number;
+  preferredJob?: string;
+  duration?: string;
+  availability?: string;
+  jobDescription?: string;
+  lastWorkingExperience?: Partial<LastJob>;
+  hasPassport?: boolean;
+  visaStatus?: string;
+  visaExpiryDate?: string;
+  emirate?: string;
+  panNumber?: string;
+  hasReferenceLetter?: boolean;
+  referenceLetterUrl?: string;
+  introVideoUrl?: string;
+  profileComplete?: boolean;
   imageUrl?: string;
   kyc?: { idType?: string; idNumber?: string; idDocumentUrl?: string };
   applicationStatus: "pending" | "approved" | "rejected";
   rejectionReason?: string;
   isActive?: boolean;
   createdAt: string;
+  updatedAt?: string;
 }
 
-// categoryId is free text set by the public registration form (see the
-// `register-provider` page in the main site) — map the known ids to a
-// friendly label and fall back to title-casing anything unrecognized.
+// Category ids are free text set by the registration form — map the known ids
+// to a friendly label and title-case anything unrecognized.
 const CATEGORY_LABELS: Record<string, string> = {
   "cat-cook": "Cook",
   "cat-maid": "Maid",
@@ -31,12 +57,12 @@ const CATEGORY_LABELS: Record<string, string> = {
   "cat-carpenter": "Carpenter",
   "cat-driver": "Driver",
   "cat-babysitter": "Nanny",
+  "cat-nanny": "Nanny",
   "cat-elderly-care": "Elderly Care",
   "cat-painter": "Painter",
 };
 
-function labelForCategory(categoryId?: string): string {
-  if (!categoryId) return "Unspecified";
+export function labelForCategory(categoryId: string): string {
   if (CATEGORY_LABELS[categoryId]) return CATEGORY_LABELS[categoryId];
   return categoryId
     .replace(/^cat-/, "")
@@ -56,23 +82,68 @@ function colorForId(id: string): string {
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 
+function mapLastJob(job?: Partial<LastJob>): LastJob | undefined {
+  if (!job) return undefined;
+  const mapped: LastJob = {
+    jobTitle: job.jobTitle ?? "",
+    duration: job.duration ?? "",
+    workingCity: job.workingCity ?? "",
+    reasonForLeaving: job.reasonForLeaving ?? "",
+    familySize: job.familySize ?? "",
+    employerNationality: job.employerNationality ?? "",
+    salary: job.salary,
+  };
+  const hasAnything = Object.values(mapped).some((v) => v !== "" && v !== undefined);
+  return hasAnything ? mapped : undefined;
+}
+
 export function mapToProvider(provider: BackendProvider): Provider {
+  const categoryIds = provider.categoryIds?.length
+    ? provider.categoryIds
+    : provider.categoryId
+      ? [provider.categoryId]
+      : [];
+
   return {
     id: provider.id,
     fullName: provider.fullName,
     gender: provider.gender === "Male" ? "Male" : "Female",
     nationality: provider.nationality || "—",
     avatarColor: colorForId(provider.id),
-    category: labelForCategory(provider.categoryId),
-    categoryId: provider.categoryId || "",
+    categoryIds,
+    categories: categoryIds.map(labelForCategory),
     area: provider.area || "—",
     city: provider.city || "—",
     mobileNumber: provider.mobileNumber || "—",
     whatsappNumber: provider.whatsappNumber || "—",
     email: provider.email,
+    age: provider.age,
+    maritalStatus: provider.maritalStatus ?? "",
+    religion: provider.religion ?? "",
+    languages: provider.languages ?? [],
+    skills: provider.skills ?? [],
+    bio: provider.bio ?? "",
+    education: provider.education ?? "",
+    certificate: provider.certificate ?? "",
     experienceYears: provider.experienceYears ?? 0,
+    monthlySalary: provider.monthlySalary ?? provider.monthlySalaryAed,
+    preferredJob: provider.preferredJob ?? "",
+    duration: provider.duration ?? "",
+    availability: provider.availability ?? "",
+    jobDescription: provider.jobDescription ?? "",
+    lastJob: mapLastJob(provider.lastWorkingExperience),
+    hasPassport: provider.hasPassport ?? false,
+    visaStatus: provider.visaStatus ?? "",
+    visaExpiryDate: provider.visaExpiryDate ?? "",
+    emirate: provider.emirate ?? "",
+    panNumber: provider.panNumber ?? "",
+    hasReferenceLetter: provider.hasReferenceLetter ?? false,
+    referenceLetterUrl: provider.referenceLetterUrl ?? "",
+    introVideoUrl: provider.introVideoUrl ?? "",
+    profileComplete: provider.profileComplete ?? false,
     isActive: provider.isActive ?? true,
     submittedAt: provider.createdAt,
+    updatedAt: provider.updatedAt ?? provider.createdAt,
     status: provider.applicationStatus,
     rejectionReason: provider.rejectionReason,
     kyc: {

@@ -54,7 +54,7 @@ function RankedList({
 
 export function TopLists() {
   const { providers, loading } = useProviders();
-  const categories = useMemo(() => topBy(providers, (p) => p.category), [providers]);
+  const categories = useMemo(() => topBy(providers, (p) => p.categories), [providers]);
   const cities = useMemo(() => topBy(providers, (p) => p.city), [providers]);
 
   return (

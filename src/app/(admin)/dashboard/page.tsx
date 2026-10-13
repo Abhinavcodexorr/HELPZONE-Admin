@@ -1,5 +1,6 @@
 "use client";
 
+import { LayoutDashboard } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ApplicationsChart } from "@/components/dashboard/ApplicationsChart";
 import { OverviewCard } from "@/components/dashboard/OverviewCard";
@@ -19,6 +20,7 @@ export default function DashboardPage() {
   return (
     <div>
       <PageHeader
+        icon={LayoutDashboard}
         title="Dashboard"
         description="Overview of provider applications and platform activity"
       />

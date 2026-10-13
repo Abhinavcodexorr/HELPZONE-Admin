@@ -85,11 +85,13 @@ export function countWithin(providers: Provider[], days: number, now: Date, pred
   return providers.filter((p) => predicate(p) && new Date(p.submittedAt).getTime() >= from).length;
 }
 
-export function topBy(providers: Provider[], key: (p: Provider) => string, limit = 5) {
+export function topBy(providers: Provider[], key: (p: Provider) => string | string[], limit = 5) {
   const counts = new Map<string, number>();
   providers.forEach((p) => {
-    const k = key(p);
-    if (k && k !== "—") counts.set(k, (counts.get(k) ?? 0) + 1);
+    const keys = key(p);
+    (Array.isArray(keys) ? keys : [keys]).forEach((k) => {
+      if (k && k !== "—") counts.set(k, (counts.get(k) ?? 0) + 1);
+    });
   });
   return Array.from(counts.entries())
     .sort((a, b) => b[1] - a[1])
