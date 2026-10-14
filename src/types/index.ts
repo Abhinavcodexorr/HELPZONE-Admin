@@ -42,8 +42,8 @@ export interface Provider {
   avatarColor: string;
   categories: string[];
   categoryIds: string[];
-  area: string;
   city: string;
+  state: string;
   mobileNumber: string;
   whatsappNumber: string;
   email: string;
@@ -56,6 +56,7 @@ export interface Provider {
   education: string;
   certificate: string;
   experienceYears: number;
+  monthlySalary?: number;
   preferredJob: string;
   duration: string;
   availability: string;
@@ -83,7 +84,6 @@ export interface UpdateProviderInput {
   gender: "Male" | "Female";
   nationality: string;
   categoryIds: string[];
-  area: string;
   city: string;
   mobileNumber: string;
   whatsappNumber: string;

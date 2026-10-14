@@ -9,8 +9,8 @@ export interface BackendProvider {
   // Older records only have the single `categoryId`; newer ones use the array.
   categoryIds?: string[];
   categoryId?: string;
-  area?: string;
   city?: string;
+  state?: string;
   mobileNumber?: string;
   whatsappNumber?: string;
   age?: number;
@@ -22,6 +22,7 @@ export interface BackendProvider {
   education?: string;
   certificate?: string;
   experienceYears?: number;
+  monthlySalary?: number;
   preferredJob?: string;
   duration?: string;
   availability?: string;
@@ -105,8 +106,8 @@ export function mapToProvider(provider: BackendProvider): Provider {
     avatarColor: colorForId(provider.id),
     categoryIds,
     categories: categoryIds.map(labelForCategory),
-    area: provider.area || "—",
     city: provider.city || "—",
+    state: provider.state || "",
     mobileNumber: provider.mobileNumber || "—",
     whatsappNumber: provider.whatsappNumber || "—",
     email: provider.email,
@@ -119,6 +120,7 @@ export function mapToProvider(provider: BackendProvider): Provider {
     education: provider.education ?? "",
     certificate: provider.certificate ?? "",
     experienceYears: provider.experienceYears ?? 0,
+    monthlySalary: provider.monthlySalary,
     preferredJob: provider.preferredJob ?? "",
     duration: provider.duration ?? "",
     availability: provider.availability ?? "",

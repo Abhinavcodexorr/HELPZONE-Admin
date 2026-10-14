@@ -37,7 +37,6 @@ export function EditProviderModal({
     gender: provider.gender,
     nationality: provider.nationality,
     categoryIds: provider.categoryIds,
-    area: provider.area,
     city: provider.city,
     mobileNumber: provider.mobileNumber,
     whatsappNumber: provider.whatsappNumber,
@@ -131,9 +130,6 @@ export function EditProviderModal({
             </Field>
           </div>
 
-          <Field label="Area">
-            <input className={inputClass} value={form.area} onChange={(e) => set("area", e.target.value)} />
-          </Field>
           <Field label="City">
             <input className={inputClass} value={form.city} onChange={(e) => set("city", e.target.value)} />
           </Field>

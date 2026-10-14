@@ -216,8 +216,8 @@ export function ProvidersTable() {
                     </p>
                   </td>
                   <td className="px-4 py-3.5">
-                    <p className="whitespace-nowrap text-fg-2">{p.area}</p>
-                    <p className="whitespace-nowrap text-xs text-muted">{p.city}</p>
+                    <p className="whitespace-nowrap text-fg-2">{p.city}</p>
+                    {p.state && <p className="whitespace-nowrap text-xs text-muted">{p.state}</p>}
                   </td>
                   <td className="px-4 py-3.5">
                     <p className="flex items-center gap-1.5 text-fg-2">

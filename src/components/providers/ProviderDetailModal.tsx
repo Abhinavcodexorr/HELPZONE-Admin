@@ -247,8 +247,8 @@ export function ProviderDetailModal({
               <Field label="Email" wide>
                 {p.email}
               </Field>
-              <Field label="Area">{p.area}</Field>
               <Field label="City">{p.city}</Field>
+              <Field label="State">{p.state}</Field>
               {p.emirate && <Field label="Emirate">{p.emirate}</Field>}
             </Section>
 
@@ -259,17 +259,10 @@ export function ProviderDetailModal({
               <Field label="Experience">
                 {`${p.experienceYears} ${p.experienceYears === 1 ? "year" : "years"}`}
               </Field>
-              <Field label="Preferred job">{p.preferredJob}</Field>
+              <Field label="Monthly salary">
+                {p.monthlySalary !== undefined ? `${formatRupees(p.monthlySalary)} / month` : undefined}
+              </Field>
               <Field label="Job type">{p.duration}</Field>
-              <Field label="Availability" wide>
-                {p.availability}
-              </Field>
-              <Field label="Skills" wide>
-                <Chips items={p.skills} tone="gray" />
-              </Field>
-              <Field label="About" wide>
-                {p.bio}
-              </Field>
               <Field label="Job description" wide>
                 {p.jobDescription}
               </Field>
@@ -278,7 +271,9 @@ export function ProviderDetailModal({
             {p.lastJob && (
               <Section icon={History} title="Last working experience">
                 <Field label="Job title">{p.lastJob.jobTitle}</Field>
-                <Field label="Duration">{p.lastJob.duration}</Field>
+                <Field label="Duration">
+                  {/^\d+(\.\d+)?$/.test(p.lastJob.duration) ? `${p.lastJob.duration} ${p.lastJob.duration === "1" ? "year" : "years"}` : p.lastJob.duration}
+                </Field>
                 <Field label="Working city">{p.lastJob.workingCity}</Field>
                 <Field label="Family size">{p.lastJob.familySize}</Field>
                 <Field label="Employer nationality">{p.lastJob.employerNationality}</Field>
@@ -293,7 +288,6 @@ export function ProviderDetailModal({
 
             <Section icon={GraduationCap} title="Education">
               <Field label="Education">{p.education}</Field>
-              <Field label="Certificate">{p.certificate}</Field>
             </Section>
 
             <Section icon={IdCard} title="Identity & documents">
