@@ -12,7 +12,8 @@ type Filter = ProviderStatus | "all";
 
 const filters: { label: string; value: Filter }[] = [
   { label: "All", value: "all" },
-  { label: "Pending", value: "pending" },
+  { label: "New request", value: "pending" },
+  { label: "Verification", value: "verification" },
   { label: "Approved", value: "approved" },
   { label: "Rejected", value: "rejected" },
 ];
@@ -43,7 +44,7 @@ export function TrendCard() {
       tiles: [
         { label: "Received", value: sum(() => true) },
         { label: "Approved", value: sum((p) => p.status === "approved") },
-        { label: "Pending", value: sum((p) => p.status === "pending") },
+        { label: "In review", value: sum((p) => p.status === "pending" || p.status === "verification") },
       ],
     };
   }, [providers, filter, period]);

@@ -7,6 +7,7 @@ import { LayoutDashboard, Users, HardHat, Wrench, Settings, LogOut, Loader2 } fr
 import { cn, displayNameFromEmail } from "@/lib/utils";
 import { Logo } from "@/components/ui/Logo";
 import { signOut } from "@/lib/auth/client";
+import { providerStages } from "@/lib/provider-stages";
 import { useProviders } from "@/store/ProvidersContext";
 
 const nav = [
@@ -19,6 +20,7 @@ const nav = [
 export function Sidebar({ onNavigate, userEmail }: { onNavigate?: () => void; userEmail: string }) {
   const pathname = usePathname();
   const [signingOut, setSigningOut] = useState(false);
+  const [providersOpen, setProvidersOpen] = useState(true);
   const userName = displayNameFromEmail(userEmail);
 
   const [signOutFailed, setSignOutFailed] = useState(false);
@@ -33,7 +35,12 @@ export function Sidebar({ onNavigate, userEmail }: { onNavigate?: () => void; us
     }
   }
   const { providers } = useProviders();
-  const pending = providers.filter((p) => p.status === "pending").length;
+  const stageCounts = {
+    pending: providers.filter((p) => p.status === "pending").length,
+    verification: providers.filter((p) => p.status === "verification").length,
+    approved: providers.filter((p) => p.status === "approved").length,
+    rejected: providers.filter((p) => p.status === "rejected").length,
+  };
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-sidebar">
@@ -49,32 +56,77 @@ export function Sidebar({ onNavigate, userEmail }: { onNavigate?: () => void; us
         </p>
         {nav.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
+          const isProviders = href === "/providers";
           return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onNavigate}
-              className={cn(
-                "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-                active
-                  ? "bg-primary-soft text-primary"
-                  : "text-sidebar-fg hover:bg-sidebar-hover hover:text-foreground"
+            <div key={href}>
+              <Link
+                href={isProviders ? "/providers/new" : href}
+                onClick={(e) => {
+                  if (!isProviders) return onNavigate?.();
+                  // Inside the Providers section the row toggles the stage list;
+                  // from anywhere else it navigates and opens it.
+                  if (active) {
+                    e.preventDefault();
+                    setProvidersOpen((open) => !open);
+                  } else {
+                    setProvidersOpen(true);
+                    onNavigate?.();
+                  }
+                }}
+                aria-expanded={isProviders ? providersOpen : undefined}
+                className={cn(
+                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-primary-soft text-primary"
+                    : "text-sidebar-fg hover:bg-sidebar-hover hover:text-foreground"
+                )}
+              >
+                {active && (
+                  <span className="absolute -left-3 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
+                )}
+                <Icon className="h-[18px] w-[18px]" />
+                {label}
+              </Link>
+
+              {isProviders && providersOpen && (
+                <div className="ml-[22px] mt-1 animate-fade-in space-y-0.5 border-l border-border pl-3">
+                  {providerStages.map(({ slug, label: stageLabel, status, icon: StageIcon }) => {
+                    const stageActive = pathname === `/providers/${slug}`;
+                    const count = stageCounts[status];
+                    return (
+                      <Link
+                        key={slug}
+                        href={`/providers/${slug}`}
+                        onClick={onNavigate}
+                        className={cn(
+                          "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors",
+                          stageActive
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-sidebar-fg hover:bg-sidebar-hover hover:text-foreground"
+                        )}
+                      >
+                        <StageIcon className="h-4 w-4" />
+                        {stageLabel}
+                        {count > 0 && (
+                          <span
+                            className={cn(
+                              "ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+                              stageActive
+                                ? "bg-white/20 text-primary-foreground"
+                                : status === "pending"
+                                  ? "bg-warning-soft text-warning"
+                                  : "bg-surface-3 text-muted"
+                            )}
+                          >
+                            {count}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
               )}
-            >
-              {active && (
-                <span className="absolute -left-3 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
-              )}
-              <Icon className="h-[18px] w-[18px]" />
-              {label}
-              {href === "/providers" && pending > 0 && (
-                <span
-                  title={`${pending} awaiting review`}
-                  className="ml-auto animate-pop-in rounded-full bg-warning-soft px-2 py-0.5 text-[11px] font-semibold tabular-nums text-warning"
-                >
-                  {pending}
-                </span>
-              )}
-            </Link>
+            </div>
           );
         })}
       </nav>

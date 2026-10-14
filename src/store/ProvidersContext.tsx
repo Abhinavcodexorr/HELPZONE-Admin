@@ -9,6 +9,7 @@ interface ProvidersContextValue {
   loading: boolean;
   error: string | null;
   refresh: () => void;
+  verify: (id: string) => Promise<void>;
   approve: (id: string) => Promise<void>;
   reject: (id: string, reason: string) => Promise<void>;
   update: (id: string, input: UpdateProviderInput) => Promise<void>;
@@ -51,6 +52,16 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
     // triggers a state update (react-hooks/set-state-in-effect).
     queueMicrotask(load);
   }, [load]);
+
+  const verify = useCallback(async (id: string) => {
+    const res = await fetch(`/api/providers/${id}/verify`, { method: "PATCH" });
+    const json = await parseJson(res);
+    if (!res.ok || json.success === false) {
+      throw new Error(json.message || "Failed to start verification");
+    }
+    const updated = mapToProvider(json.data as BackendProvider);
+    setProviders((prev) => prev.map((p) => (p.id === id ? updated : p)));
+  }, []);
 
   const approve = useCallback(async (id: string) => {
     const res = await fetch(`/api/providers/${id}/approve`, { method: "PATCH" });
@@ -100,8 +111,8 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ providers, loading, error, refresh: load, approve, reject, update, remove }),
-    [providers, loading, error, load, approve, reject, update, remove]
+    () => ({ providers, loading, error, refresh: load, verify, approve, reject, update, remove }),
+    [providers, loading, error, load, verify, approve, reject, update, remove]
   );
 
   return <ProvidersContext.Provider value={value}>{children}</ProvidersContext.Provider>;

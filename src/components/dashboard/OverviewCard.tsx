@@ -34,20 +34,20 @@ export function OverviewCard() {
 
   const stats = useMemo(() => {
     const now = new Date();
-    const decided = providers.filter((p) => p.status !== "pending");
+    const decided = providers.filter((p) => p.status === "approved" || p.status === "rejected");
     const approved = providers.filter((p) => p.status === "approved").length;
     const experience = providers.length
       ? providers.reduce((sum, p) => sum + p.experienceYears, 0) / providers.length
       : 0;
     return {
       total: providers.length,
-      pending: providers.filter((p) => p.status === "pending").length,
+      pending: providers.filter((p) => p.status === "pending" || p.status === "verification").length,
       approvalRate: decided.length ? Math.round((approved / decided.length) * 100) : null,
       decided: decided.length,
       experience: Math.round(experience * 10) / 10,
       thisWeek: countWithin(providers, 7, now),
       applicationsTrend: periodSeries(providers, "monthly", now).map((p) => p.value),
-      pendingTrend: periodSeries(providers, "monthly", now, (p) => p.status === "pending").map((p) => p.value),
+      pendingTrend: periodSeries(providers, "monthly", now, (p) => p.status === "pending" || p.status === "verification").map((p) => p.value),
     };
   }, [providers]);
 

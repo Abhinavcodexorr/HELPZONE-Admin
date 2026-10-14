@@ -83,7 +83,7 @@ export function Topbar({ onMenuClick, userName }: { onMenuClick: () => void; use
         <div className="flex items-center gap-0.5 rounded-xl bg-surface-2 p-1 ring-1 ring-border">
           <ThemeToggle />
           <Link
-            href="/providers"
+            href="/providers/new"
             aria-label={pending > 0 ? `${pending} applications awaiting review` : "Notifications"}
             title={pending > 0 ? `${pending} awaiting review` : "No new applications"}
             className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-3 hover:text-foreground"

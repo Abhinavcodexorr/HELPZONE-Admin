@@ -1,16 +1,5 @@
-import { HardHat } from "lucide-react";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { ProvidersTable } from "@/components/providers/ProvidersTable";
+import { redirect } from "next/navigation";
 
 export default function ProvidersPage() {
-  return (
-    <div>
-      <PageHeader
-        icon={HardHat}
-        title="Providers"
-        description="Maids, cooks, plumbers and other service professionals on the platform"
-      />
-      <ProvidersTable />
-    </div>
-  );
+  redirect("/providers/new");
 }

@@ -7,7 +7,8 @@ import { RingProgress } from "./charts";
 
 const rings = [
   { status: "approved", label: "Approved", color: "#22c55e" },
-  { status: "pending", label: "Pending", color: "#f5a524" },
+  { status: "pending", label: "New request", color: "#f5a524" },
+  { status: "verification", label: "Verification", color: "#3b82f6" },
   { status: "rejected", label: "Rejected", color: "#f43f5e" },
 ] as const;
 
@@ -18,7 +19,7 @@ export function StatusRings() {
   return (
     <Card className="p-5">
       <h3 className="mb-5 text-sm font-semibold text-foreground">Application status</h3>
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {rings.map(({ status, label, color }) => {
           const count = providers.filter((p) => p.status === status).length;
           return (

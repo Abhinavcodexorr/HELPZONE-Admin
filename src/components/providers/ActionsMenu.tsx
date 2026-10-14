@@ -2,13 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown, Eye, Pencil, Trash2, X } from "lucide-react";
+import { Check, ChevronDown, Eye, Pencil, ShieldCheck, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ActionsMenuProps {
+  canVerify: boolean;
   canApprove: boolean;
   busy?: boolean;
   onView: () => void;
+  onVerify: () => void;
   onApprove: () => void;
   onReject: () => void;
   onEdit: () => void;
@@ -19,9 +21,11 @@ const MENU_WIDTH = 176;
 const MENU_GAP = 6;
 
 export function ActionsMenu({
+  canVerify,
   canApprove,
   busy = false,
   onView,
+  onVerify,
   onApprove,
   onReject,
   onEdit,
@@ -38,7 +42,7 @@ export function ActionsMenu({
   function openMenu() {
     const rect = buttonRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const estimatedHeight = canApprove ? 220 : 140;
+    const estimatedHeight = canVerify || canApprove ? 220 : 140;
     const flipUp = window.innerHeight - rect.bottom < estimatedHeight + MENU_GAP;
     const left = Math.max(8, Math.min(rect.right - MENU_WIDTH, window.innerWidth - MENU_WIDTH - 8));
     setPosition(
@@ -105,6 +109,7 @@ export function ActionsMenu({
             className="z-[80] origin-top-right animate-pop-in overflow-hidden rounded-xl border border-border bg-surface py-1.5 shadow-xl"
           >
             <MenuItem icon={Eye} label="View details" onClick={() => run(onView)} />
+            {canVerify && <MenuItem icon={ShieldCheck} label="Verify" onClick={() => run(onVerify)} />}
             {canApprove && (
               <>
                 <MenuItem icon={Check} label="Approve" tone="success" onClick={() => run(onApprove)} />

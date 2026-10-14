@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
 import { formatDate } from "@/lib/utils";
 import { MessageCircle, Phone } from "lucide-react";
+import { providerStages } from "@/lib/provider-stages";
 import { ProviderStatus } from "@/types";
 import { useProviders } from "@/store/ProvidersContext";
 import { IdProofThumbnail } from "./IdProofThumbnail";
@@ -18,29 +19,43 @@ import { EditProviderModal } from "./EditProviderModal";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
 import { ActionsMenu } from "./ActionsMenu";
 
-const statusTone: Record<ProviderStatus, "green" | "amber" | "red"> = {
+const statusTone: Record<ProviderStatus, "green" | "amber" | "red" | "blue"> = {
   approved: "green",
   pending: "amber",
+  verification: "blue",
   rejected: "red",
 };
 
 const statusDot: Record<ProviderStatus, string> = {
   approved: "bg-success-solid",
   pending: "bg-amber-400",
+  verification: "bg-blue-500",
   rejected: "bg-danger-solid",
 };
 
-const statusTabs: { label: string; value: ProviderStatus | "all" }[] = [
-  { label: "All", value: "all" },
-  { label: "Pending", value: "pending" },
-  { label: "Approved", value: "approved" },
-  { label: "Rejected", value: "rejected" },
-];
+const statusLabel: Record<ProviderStatus, string> = {
+  pending: "New request",
+  verification: "In verification",
+  approved: "Approved",
+  rejected: "Rejected",
+};
 
-export function ProvidersTable() {
-  const { providers, loading, error, refresh, approve, reject, update, remove } = useProviders();
+export function ProvidersTable({ status }: { status: ProviderStatus }) {
+  const { providers, loading, error, refresh, verify, approve, reject, update, remove } = useProviders();
+  const stage = providerStages.find((t) => t.status === status) ?? providerStages[0];
+  // Each stage page mounts its own table, so opening a stage reloads the list
+  // from the API and every stage shows current data. On a hard page load the
+  // provider is still doing its first fetch (loading), so nothing extra is
+  // requested; the ref also stops Strict Mode's double effect from fetching twice.
+  const dataWasLoaded = useRef(!loading);
+  const refreshed = useRef(false);
+  useEffect(() => {
+    if (!dataWasLoaded.current || refreshed.current) return;
+    refreshed.current = true;
+    queueMicrotask(refresh);
+  }, [refresh]);
+
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<ProviderStatus | "all">("all");
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -60,14 +75,15 @@ export function ProvidersTable() {
     }
   }
 
+  const handleVerify = (id: string) => runAction(id, () => verify(id), "Failed to start verification");
   const handleApprove = (id: string) => runAction(id, () => approve(id), "Failed to approve provider");
   const handleReject = (id: string, reason: string) =>
     runAction(id, () => reject(id, reason), "Failed to reject provider");
 
   const counts = useMemo(
     () => ({
-      all: providers.length,
       pending: providers.filter((p) => p.status === "pending").length,
+      verification: providers.filter((p) => p.status === "verification").length,
       approved: providers.filter((p) => p.status === "approved").length,
       rejected: providers.filter((p) => p.status === "rejected").length,
     }),
@@ -81,7 +97,7 @@ export function ProvidersTable() {
         p.email.toLowerCase().includes(query.toLowerCase()) ||
         p.city.toLowerCase().includes(query.toLowerCase()) ||
         p.kyc.idNumber.toLowerCase().includes(query.toLowerCase());
-      const matchesStatus = status === "all" || p.status === status;
+      const matchesStatus = p.status === status;
       return matchesQuery && matchesStatus;
     });
   }, [providers, query, status]);
@@ -95,29 +111,14 @@ export function ProvidersTable() {
     <Card>
       <div className="flex flex-col gap-3 border-b border-border p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex gap-1.5 overflow-x-auto">
-            {statusTabs.map((t) => (
-              <button
-                key={t.value}
-                onClick={() => setStatus(t.value)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 active:scale-95 ${
-                  status === t.value
-                    ? "bg-foreground text-background shadow-sm"
-                    : "bg-surface-3 text-fg-2 hover:bg-border"
-                }`}
-              >
-                {t.label}
-                {!loading && (
-                  <span
-                    className={`animate-fade-in rounded-full px-1.5 py-0.5 text-[10px] ${
-                      status === t.value ? "bg-background/25" : "bg-surface text-muted"
-                    }`}
-                  >
-                    {counts[t.value]}
-                  </span>
-                )}
-              </button>
-            ))}
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-soft text-primary">
+              <stage.icon className="h-[18px] w-[18px]" />
+            </span>
+            <div className="leading-tight">
+              <p className="text-sm font-semibold text-foreground">{stage.label}</p>
+              <p className="text-xs text-muted">{loading ? "Loading…" : `${counts[status]} ${counts[status] === 1 ? "provider" : "providers"}`}</p>
+            </div>
           </div>
           <SearchInput
             value={query}
@@ -242,7 +243,7 @@ export function ProvidersTable() {
                   </td>
                   <td className="px-4 py-3.5">
                     <Badge tone={statusTone[p.status]} dot>
-                      {p.status}
+                      {statusLabel[p.status]}
                     </Badge>
                     {p.status === "rejected" && p.rejectionReason && (
                       <p
@@ -256,9 +257,11 @@ export function ProvidersTable() {
                   <td className="px-4 py-3.5">
                     <div className="flex justify-end">
                       <ActionsMenu
-                        canApprove={p.status === "pending"}
+                        canVerify={p.status === "pending"}
+                        canApprove={p.status === "verification"}
                         busy={busy}
                         onView={() => setViewingId(p.id)}
+                        onVerify={() => handleVerify(p.id)}
                         onApprove={() => handleApprove(p.id)}
                         onReject={() => setRejectingId(p.id)}
                         onEdit={() => setEditingId(p.id)}
@@ -274,7 +277,9 @@ export function ProvidersTable() {
                 <td colSpan={9} className="px-4 py-12 text-center text-sm text-subtle">
                   {providers.length === 0
                     ? "No provider applications yet."
-                    : "No providers match your filters."}
+                    : query
+                      ? "No providers match your search."
+                      : `No providers in ${stage.label}.`}
                 </td>
               </tr>
             )}
@@ -287,7 +292,7 @@ export function ProvidersTable() {
           <Skeleton className="h-3.5 w-40" />
         ) : (
           <span>
-            Showing {filtered.length} of {providers.length} providers
+            Showing {filtered.length} of {counts[status]} in {stage.label}
           </span>
         )}
       </div>
@@ -296,6 +301,7 @@ export function ProvidersTable() {
         <ProviderDetailModal
           provider={viewingProvider}
           onClose={() => setViewingId(null)}
+          onVerify={handleVerify}
           onApprove={handleApprove}
           onReject={handleReject}
         />

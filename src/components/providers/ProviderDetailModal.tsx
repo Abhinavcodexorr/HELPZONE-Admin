@@ -29,9 +29,22 @@ import { digitsOnly, formatDateTime, formatRupees, isPdf } from "@/lib/utils";
 import { RejectModal } from "./RejectModal";
 import { ImageLightbox } from "./ImageLightbox";
 
-const statusTone = { pending: "amber", approved: "green", rejected: "red" } as const;
+const statusTone = {
+  pending: "amber",
+  verification: "blue",
+  approved: "green",
+  rejected: "red",
+} as const;
 
-function Section({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: ReactNode }) {
+function Section({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <section>
       <h4 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted">
@@ -40,24 +53,46 @@ function Section({ icon: Icon, title, children }: { icon: LucideIcon; title: str
         </span>
         {title}
       </h4>
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">{children}</dl>
+      <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+        {children}
+      </dl>
     </section>
   );
 }
 
-function Field({ label, children, wide = false }: { label: string; children?: ReactNode; wide?: boolean }) {
-  const empty = children === undefined || children === null || children === "" || children === "—";
+function Field({
+  label,
+  children,
+  wide = false,
+}: {
+  label: string;
+  children?: ReactNode;
+  wide?: boolean;
+}) {
+  const empty =
+    children === undefined ||
+    children === null ||
+    children === "" ||
+    children === "—";
   return (
     <div className={wide ? "sm:col-span-2" : undefined}>
       <dt className="text-xs text-muted">{label}</dt>
-      <dd className={`mt-0.5 break-words text-sm ${empty ? "text-subtle" : "font-medium text-foreground"}`}>
+      <dd
+        className={`mt-0.5 break-words text-sm ${empty ? "text-subtle" : "font-medium text-foreground"}`}
+      >
         {empty ? "—" : children}
       </dd>
     </div>
   );
 }
 
-function Chips({ items, tone = "indigo" }: { items: string[]; tone?: "indigo" | "blue" | "gray" }) {
+function Chips({
+  items,
+  tone = "indigo",
+}: {
+  items: string[];
+  tone?: "indigo" | "blue" | "gray";
+}) {
   if (items.length === 0) return <>—</>;
   return (
     <span className="flex flex-wrap gap-1.5">
@@ -75,16 +110,22 @@ const yesNo = (value: boolean) => (value ? "Yes" : "No");
 export function ProviderDetailModal({
   provider,
   onClose,
+  onVerify,
   onApprove,
   onReject,
 }: {
   provider: Provider;
   onClose: () => void;
+  onVerify: (id: string) => void;
   onApprove: (id: string) => void;
   onReject: (id: string, reason: string) => void;
 }) {
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [lightbox, setLightbox] = useState<{ src: string; alt: string; caption: string } | null>(null);
+  const [lightbox, setLightbox] = useState<{
+    src: string;
+    alt: string;
+    caption: string;
+  } | null>(null);
   const [photoFailed, setPhotoFailed] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
   const p = provider;
@@ -93,13 +134,20 @@ export function ProviderDetailModal({
   const waDigits = digitsOnly(p.whatsappNumber === "—" ? "" : p.whatsappNumber);
   const waNumber = waDigits.length === 10 ? `91${waDigits}` : waDigits;
   const idIsPdf = isPdf(p.kyc.idDocumentImage);
-  const subtitle = [p.gender, p.age ? `${p.age} yrs` : null, p.nationality !== "—" ? p.nationality : null]
+  const subtitle = [
+    p.gender,
+    p.age ? `${p.age} yrs` : null,
+    p.nationality !== "—" ? p.nationality : null,
+  ]
     .filter(Boolean)
     .join(" · ");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
-      <div className="absolute inset-0 animate-fade-in bg-black/50 backdrop-blur-[3px]" onClick={onClose} />
+      <div
+        className="absolute inset-0 animate-fade-in bg-black/50 backdrop-blur-[3px]"
+        onClick={onClose}
+      />
 
       <div className="relative flex max-h-[94vh] w-full max-w-4xl animate-pop-in flex-col overflow-hidden rounded-3xl bg-surface shadow-2xl ring-1 ring-border">
         <button
@@ -117,7 +165,13 @@ export function ProviderDetailModal({
               {p.kyc.photoImage && !photoFailed ? (
                 <button
                   type="button"
-                  onClick={() => setLightbox({ src: p.kyc.photoImage, alt: `${p.fullName} photo`, caption: `${p.fullName} · applicant photo` })}
+                  onClick={() =>
+                    setLightbox({
+                      src: p.kyc.photoImage,
+                      alt: `${p.fullName} photo`,
+                      caption: `${p.fullName} · applicant photo`,
+                    })
+                  }
                   className="group relative block w-full overflow-hidden rounded-2xl ring-1 ring-border"
                 >
                   <ShimmerImage
@@ -139,15 +193,21 @@ export function ProviderDetailModal({
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold leading-tight text-foreground">{p.fullName}</h3>
+              <h3 className="text-lg font-semibold leading-tight text-foreground">
+                {p.fullName}
+              </h3>
               <p className="mt-0.5 text-sm text-muted">{subtitle}</p>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 <Badge tone={statusTone[p.status]} dot>
                   {p.status}
                 </Badge>
-                <Badge tone={p.isActive ? "green" : "gray"}>{p.isActive ? "Active" : "Inactive"}</Badge>
+                <Badge tone={p.isActive ? "green" : "gray"}>
+                  {p.isActive ? "Active" : "Inactive"}
+                </Badge>
                 <Badge tone={p.profileComplete ? "blue" : "gray"}>
-                  {p.profileComplete ? "Profile complete" : "Profile incomplete"}
+                  {p.profileComplete
+                    ? "Profile complete"
+                    : "Profile incomplete"}
                 </Badge>
               </div>
               {p.categories.length > 0 && (
@@ -163,9 +223,21 @@ export function ProviderDetailModal({
 
             <div className="grid grid-cols-3 gap-2">
               {[
-                { href: phoneOk ? `tel:${p.mobileNumber}` : undefined, icon: Phone, label: "Call" },
-                { href: waNumber ? `https://wa.me/${waNumber}` : undefined, icon: MessageCircle, label: "WhatsApp" },
-                { href: p.email ? `mailto:${p.email}` : undefined, icon: Mail, label: "Email" },
+                {
+                  href: phoneOk ? `tel:${p.mobileNumber}` : undefined,
+                  icon: Phone,
+                  label: "Call",
+                },
+                {
+                  href: waNumber ? `https://wa.me/${waNumber}` : undefined,
+                  icon: MessageCircle,
+                  label: "WhatsApp",
+                },
+                {
+                  href: p.email ? `mailto:${p.email}` : undefined,
+                  icon: Mail,
+                  label: "Email",
+                },
               ].map(({ href, icon: Icon, label }) =>
                 href ? (
                   <a
@@ -191,7 +263,9 @@ export function ProviderDetailModal({
             </div>
 
             <div>
-              <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Intro video</h4>
+              <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">
+                Intro video
+              </h4>
               {p.introVideoUrl && !videoFailed ? (
                 <video
                   src={`${p.introVideoUrl}#t=0.1`}
@@ -260,7 +334,9 @@ export function ProviderDetailModal({
                 {`${p.experienceYears} ${p.experienceYears === 1 ? "year" : "years"}`}
               </Field>
               <Field label="Monthly salary">
-                {p.monthlySalary !== undefined ? `${formatRupees(p.monthlySalary)} / month` : undefined}
+                {p.monthlySalary !== undefined
+                  ? `${formatRupees(p.monthlySalary)} / month`
+                  : undefined}
               </Field>
               <Field label="Job type">{p.duration}</Field>
               <Field label="Job description" wide>
@@ -272,13 +348,19 @@ export function ProviderDetailModal({
               <Section icon={History} title="Last working experience">
                 <Field label="Job title">{p.lastJob.jobTitle}</Field>
                 <Field label="Duration">
-                  {/^\d+(\.\d+)?$/.test(p.lastJob.duration) ? `${p.lastJob.duration} ${p.lastJob.duration === "1" ? "year" : "years"}` : p.lastJob.duration}
+                  {/^\d+(\.\d+)?$/.test(p.lastJob.duration)
+                    ? `${p.lastJob.duration} ${p.lastJob.duration === "1" ? "year" : "years"}`
+                    : p.lastJob.duration}
                 </Field>
                 <Field label="Working city">{p.lastJob.workingCity}</Field>
                 <Field label="Family size">{p.lastJob.familySize}</Field>
-                <Field label="Employer nationality">{p.lastJob.employerNationality}</Field>
+                <Field label="Employer nationality">
+                  {p.lastJob.employerNationality}
+                </Field>
                 <Field label="Salary">
-                  {p.lastJob.salary !== undefined ? `${formatRupees(p.lastJob.salary)} / month` : undefined}
+                  {p.lastJob.salary !== undefined
+                    ? `${formatRupees(p.lastJob.salary)} / month`
+                    : undefined}
                 </Field>
                 <Field label="Reason for leaving" wide>
                   {p.lastJob.reasonForLeaving}
@@ -310,7 +392,9 @@ export function ProviderDetailModal({
                     <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-danger-soft text-danger">
                       <FileText className="h-5 w-5" />
                     </span>
-                    <span className="text-sm font-medium text-foreground">Open ID document (PDF)</span>
+                    <span className="text-sm font-medium text-foreground">
+                      Open ID document (PDF)
+                    </span>
                     <ExternalLink className="ml-auto h-4 w-4 text-muted" />
                   </a>
                 ) : (
@@ -345,35 +429,57 @@ export function ProviderDetailModal({
                   {p.status}
                 </Badge>
               </Field>
-              <Field label="Account">{p.isActive ? "Active" : "Inactive"}</Field>
+              <Field label="Account">
+                {p.isActive ? "Active" : "Inactive"}
+              </Field>
               <Field label="Applied on">{formatDateTime(p.submittedAt)}</Field>
               <Field label="Last updated">{formatDateTime(p.updatedAt)}</Field>
-              <Field label="Profile completed">{yesNo(p.profileComplete)}</Field>
+              <Field label="Profile completed">
+                {yesNo(p.profileComplete)}
+              </Field>
             </Section>
           </div>
         </div>
 
-        {p.status === "pending" && (
+        {(p.status === "pending" || p.status === "verification") && (
           <div className="flex items-center justify-between gap-3 border-t border-border bg-surface px-6 py-4">
-            <p className="hidden text-sm text-muted sm:block">Review the details and documents, then decide.</p>
+            <p className="hidden text-sm text-muted sm:block">
+              {p.status === "pending"
+                ? "New request — verify it to move it to the verification stage."
+                : "In verification — check the documents, then approve or reject."}
+            </p>
             <div className="flex w-full gap-2 sm:w-auto">
-              <Button
-                variant="secondary"
-                className="flex-1 text-danger hover:bg-danger-soft sm:flex-none"
-                onClick={() => setShowRejectModal(true)}
-              >
-                <X className="h-4 w-4" /> Reject
-              </Button>
-              <Button
-                variant="success"
-                className="flex-1 sm:flex-none"
-                onClick={() => {
-                  onApprove(p.id);
-                  onClose();
-                }}
-              >
-                <Check className="h-4 w-4" /> Approve
-              </Button>
+              {p.status === "verification" && (
+                <Button
+                  variant="secondary"
+                  className="flex-1 text-danger hover:bg-danger-soft sm:flex-none"
+                  onClick={() => setShowRejectModal(true)}
+                >
+                  <X className="h-4 w-4" /> Reject
+                </Button>
+              )}
+              {p.status === "pending" ? (
+                <Button
+                  className="flex-1 sm:flex-none"
+                  onClick={() => {
+                    onVerify(p.id);
+                    onClose();
+                  }}
+                >
+                  <ShieldCheck className="h-4 w-4" /> Verify
+                </Button>
+              ) : (
+                <Button
+                  variant="success"
+                  className="flex-1 sm:flex-none"
+                  onClick={() => {
+                    onApprove(p.id);
+                    onClose();
+                  }}
+                >
+                  <Check className="h-4 w-4" /> Approve
+                </Button>
+              )}
             </div>
           </div>
         )}

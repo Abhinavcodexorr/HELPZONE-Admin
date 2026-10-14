@@ -18,7 +18,7 @@ export interface User {
 // backend doesn't happen to match.
 export type ServiceCategory = string;
 
-export type ProviderStatus = "pending" | "approved" | "rejected";
+export type ProviderStatus = "pending" | "verification" | "approved" | "rejected";
 
 export type IdType = string;
 

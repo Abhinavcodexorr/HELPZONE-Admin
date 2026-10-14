@@ -34,7 +34,7 @@ export interface BackendProvider {
   profileComplete?: boolean;
   imageUrl?: string;
   kyc?: { idType?: string; idNumber?: string; idDocumentUrl?: string };
-  applicationStatus: "pending" | "approved" | "rejected";
+  applicationStatus: "pending" | "verification" | "approved" | "rejected";
   rejectionReason?: string;
   isActive?: boolean;
   createdAt: string;
@@ -105,7 +105,7 @@ export function mapToProvider(provider: BackendProvider): Provider {
     nationality: provider.nationality || "—",
     avatarColor: colorForId(provider.id),
     categoryIds,
-    categories: categoryIds.map(labelForCategory),
+    categories: [...new Set(categoryIds.map(labelForCategory))],
     city: provider.city || "—",
     state: provider.state || "",
     mobileNumber: provider.mobileNumber || "—",
