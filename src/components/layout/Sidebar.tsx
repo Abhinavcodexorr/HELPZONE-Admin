@@ -11,8 +11,8 @@ import { useProviders } from "@/store/ProvidersContext";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/users", label: "Users", icon: Users },
   { href: "/providers", label: "Providers", icon: HardHat },
+  { href: "/users", label: "Users", icon: Users },
   { href: "/services", label: "Services", icon: Wrench },
 ];
 
