@@ -18,6 +18,9 @@ interface ProvidersContextValue {
 const ProvidersContext = createContext<ProvidersContextValue | null>(null);
 
 async function parseJson(res: Response): Promise<{ success?: boolean; message?: string; data?: unknown }> {
+  // The session cookie expired (or was cleared): send the admin back to sign in.
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload drops the old session's data
+  if (res.status === 401 && typeof window !== "undefined") window.location.href = "/login";
   return res.json().catch(() => ({ success: false, message: "Invalid response" }));
 }
 

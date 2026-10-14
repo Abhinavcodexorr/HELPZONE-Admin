@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Bell, Menu } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
-export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
+export function Topbar({ onMenuClick, userName }: { onMenuClick: () => void; userName: string }) {
   // Computed after mount so server and client markup match.
   const [today, setToday] = useState("");
   useEffect(() => {
@@ -25,7 +25,7 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
       <div className="hidden sm:block">
         <p className="text-sm text-muted">
-          Welcome back, <span className="font-semibold text-foreground">Admin</span>
+          Welcome back, <span className="font-semibold text-foreground">{userName}</span>
           {today && <span className="animate-fade-in text-subtle"> &middot; {today}</span>}
         </p>
       </div>
@@ -40,7 +40,7 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         </button>
         <div className="mx-2 h-6 w-px bg-border" />
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
-          A
+          {userName.charAt(0).toUpperCase()}
         </div>
       </div>
     </header>

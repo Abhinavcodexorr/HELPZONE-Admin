@@ -43,3 +43,14 @@ export function digitsOnly(value: string) {
 export function formatRupees(amount: number) {
   return `₹${amount.toLocaleString("en-IN")}`;
 }
+
+// "ritesh.kumar@x.com" -> "Ritesh Kumar"
+export function displayNameFromEmail(email: string) {
+  const local = email.split("@")[0] ?? "";
+  const name = local
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+  return name || "Admin";
+}

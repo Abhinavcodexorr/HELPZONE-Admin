@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, HardHat, Wrench, Settings } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { LayoutDashboard, Users, HardHat, Wrench, Settings, LogOut, Loader2 } from "lucide-react";
+import { cn, displayNameFromEmail } from "@/lib/utils";
+import { Logo } from "@/components/ui/Logo";
 import { useProviders } from "@/store/ProvidersContext";
 
 const nav = [
@@ -13,18 +15,30 @@ const nav = [
   { href: "/services", label: "Services", icon: Wrench },
 ];
 
-export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+export function Sidebar({ onNavigate, userEmail }: { onNavigate?: () => void; userEmail: string }) {
   const pathname = usePathname();
+  const [signingOut, setSigningOut] = useState(false);
+  const userName = displayNameFromEmail(userEmail);
+
+  async function signOut() {
+    setSigningOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      // Full navigation clears all in-memory data from the signed-out session.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload drops the old session's data
+      window.location.href = "/login";
+    }
+  }
   const { providers } = useProviders();
   const pending = providers.filter((p) => p.status === "pending").length;
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-sidebar">
       <div className="px-5 pb-5 pt-6">
-        <div className="inline-flex rounded-xl px-1.5 py-1 dark:bg-white dark:px-3 dark:py-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-horizontal.png" alt="Help Zone" className="h-8 w-auto" />
-        </div>
+        <Link href="/dashboard" onClick={onNavigate} aria-label="Help Zone dashboard" className="inline-block">
+          <Logo className="h-10 w-auto" />
+        </Link>
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-1">
@@ -73,12 +87,23 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </Link>
         <div className="flex items-center gap-3 rounded-xl bg-surface-2 px-3 py-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-            A
+            {userName.charAt(0).toUpperCase()}
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">Admin User</p>
-            <p className="truncate text-xs text-muted">info.codexorr@gmail.com</p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-foreground">{userName}</p>
+            <p className="truncate text-xs text-muted" title={userEmail}>
+              {userEmail}
+            </p>
           </div>
+          <button
+            onClick={signOut}
+            disabled={signingOut}
+            title="Sign out"
+            aria-label="Sign out"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-danger-soft hover:text-danger active:scale-90 disabled:opacity-60"
+          >
+            {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+          </button>
         </div>
       </div>
     </div>

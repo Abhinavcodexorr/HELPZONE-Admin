@@ -4,15 +4,16 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { displayNameFromEmail } from "@/lib/utils";
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+export function DashboardShell({ children, userEmail }: { children: React.ReactNode; userEmail: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="hidden lg:block">
         <div className="fixed inset-y-0 left-0 z-40">
-          <Sidebar />
+          <Sidebar userEmail={userEmail} />
         </div>
       </aside>
 
@@ -24,7 +25,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           />
           <div className="absolute inset-y-0 left-0 animate-slide-in-left">
             <div className="relative h-full">
-              <Sidebar onNavigate={() => setMobileOpen(false)} />
+              <Sidebar userEmail={userEmail} onNavigate={() => setMobileOpen(false)} />
               <button
                 onClick={() => setMobileOpen(false)}
                 className="absolute right-[-44px] top-4 flex h-9 w-9 items-center justify-center rounded-lg bg-white/10 text-white"
@@ -37,7 +38,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       )}
 
       <div className="flex min-h-screen w-full flex-col lg:pl-64">
-        <Topbar onMenuClick={() => setMobileOpen(true)} />
+        <Topbar userName={displayNameFromEmail(userEmail)} onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>
