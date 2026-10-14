@@ -18,13 +18,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900 p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+      <section className="relative hidden overflow-hidden bg-gradient-to-br from-[#091024] via-[#122579] to-[#2a56d6] p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-indigo-400/20 blur-3xl" />
 
-        <div className="relative inline-flex w-fit rounded-2xl bg-white px-6 py-4 shadow-xl shadow-black/20">
-          <Logo surface="light" className="h-11 w-auto" />
-        </div>
+        <Logo surface="dark" className="relative h-16 w-auto self-start" />
 
         <div className="relative max-w-md">
           <h1 className="text-4xl font-semibold leading-tight tracking-tight">
@@ -55,7 +53,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
         <div className="w-full max-w-md animate-pop-in">
           <div className="mb-8 lg:hidden">
-            <Logo className="h-12 w-auto" />
+            <Logo className="h-14 w-auto" />
           </div>
 
           <h2 className="text-3xl font-semibold tracking-tight text-foreground">Welcome back</h2>

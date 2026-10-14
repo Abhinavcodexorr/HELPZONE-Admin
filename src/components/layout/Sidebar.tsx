@@ -6,6 +6,7 @@ import { useState } from "react";
 import { LayoutDashboard, Users, HardHat, Wrench, Settings, LogOut, Loader2 } from "lucide-react";
 import { cn, displayNameFromEmail } from "@/lib/utils";
 import { Logo } from "@/components/ui/Logo";
+import { signOut } from "@/lib/auth/client";
 import { useProviders } from "@/store/ProvidersContext";
 
 const nav = [
@@ -20,14 +21,15 @@ export function Sidebar({ onNavigate, userEmail }: { onNavigate?: () => void; us
   const [signingOut, setSigningOut] = useState(false);
   const userName = displayNameFromEmail(userEmail);
 
-  async function signOut() {
+  const [signOutFailed, setSignOutFailed] = useState(false);
+
+  async function handleSignOut() {
     setSigningOut(true);
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } finally {
-      // Full navigation clears all in-memory data from the signed-out session.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload drops the old session's data
-      window.location.href = "/login";
+    setSignOutFailed(false);
+    const ok = await signOut();
+    if (!ok) {
+      setSigningOut(false);
+      setSignOutFailed(true);
     }
   }
   const { providers } = useProviders();
@@ -37,7 +39,7 @@ export function Sidebar({ onNavigate, userEmail }: { onNavigate?: () => void; us
     <div className="flex h-full w-64 flex-col border-r border-border bg-sidebar">
       <div className="px-5 pb-5 pt-6">
         <Link href="/dashboard" onClick={onNavigate} aria-label="Help Zone dashboard" className="inline-block">
-          <Logo className="h-10 w-auto" />
+          <Logo className="h-12 w-auto" />
         </Link>
       </div>
 
@@ -96,7 +98,7 @@ export function Sidebar({ onNavigate, userEmail }: { onNavigate?: () => void; us
             </p>
           </div>
           <button
-            onClick={signOut}
+            onClick={handleSignOut}
             disabled={signingOut}
             title="Sign out"
             aria-label="Sign out"
@@ -105,6 +107,11 @@ export function Sidebar({ onNavigate, userEmail }: { onNavigate?: () => void; us
             {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
           </button>
         </div>
+        {signOutFailed && (
+          <p role="alert" className="animate-fade-in px-1 text-xs text-danger">
+            Couldn&apos;t sign out. Check your connection and try again.
+          </p>
+        )}
       </div>
     </div>
   );

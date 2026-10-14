@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 
-// Two files because the artwork differs by surface: dark ink on light surfaces,
-// white "help" (and an inverted plus) on dark ones. `surface` is the backdrop the
-// logo sits on; "auto" follows the app theme.
+// The artwork differs by surface: dark ink on light, white "help" with brighter
+// blue and gold on dark. `surface` is the backdrop the logo sits on; "auto"
+// follows the app theme.
 export function Logo({ className, surface = "auto" }: { className?: string; surface?: "auto" | "light" | "dark" }) {
   if (surface !== "auto") {
     // eslint-disable-next-line @next/next/no-img-element

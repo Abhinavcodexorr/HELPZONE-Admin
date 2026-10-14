@@ -27,11 +27,16 @@ function importKey(secret: string, usage: KeyUsage) {
 
 export interface Session {
   email: string;
+  // Unique per login, so a signed-out session can be revoked server-side.
+  sid: string;
+  exp: number;
 }
 
 export async function createSessionToken(email: string, secret: string): Promise<string> {
   const payload = toBase64Url(
-    encoder.encode(JSON.stringify({ email, exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS })),
+    encoder.encode(
+      JSON.stringify({ email, sid: crypto.randomUUID(), exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS }),
+    ),
   );
   const signature = await crypto.subtle.sign("HMAC", await importKey(secret, "sign"), encoder.encode(payload));
   return `${payload}.${toBase64Url(new Uint8Array(signature))}`;
@@ -52,10 +57,10 @@ export async function verifySessionToken(token: string | undefined, secret: stri
     );
     if (!valid) return null;
 
-    const data = JSON.parse(new TextDecoder().decode(fromBase64Url(payload))) as { email?: unknown; exp?: unknown };
-    if (typeof data.email !== "string" || typeof data.exp !== "number") return null;
+    const data = JSON.parse(new TextDecoder().decode(fromBase64Url(payload))) as { email?: unknown; sid?: unknown; exp?: unknown };
+    if (typeof data.email !== "string" || typeof data.sid !== "string" || typeof data.exp !== "number") return null;
     if (data.exp < Math.floor(Date.now() / 1000)) return null;
-    return { email: data.email };
+    return { email: data.email, sid: data.sid, exp: data.exp };
   } catch {
     return null;
   }

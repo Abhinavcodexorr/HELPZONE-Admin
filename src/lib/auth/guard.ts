@@ -1,10 +1,12 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { isRevoked } from "./revocation";
 import { SESSION_COOKIE, verifySessionToken, type Session } from "./session";
 
 export async function getSession(): Promise<Session | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  return verifySessionToken(token, process.env.AUTH_SECRET);
+  const session = await verifySessionToken(token, process.env.AUTH_SECRET);
+  return session && !isRevoked(session.sid) ? session : null;
 }
 
 // Route handlers call this first; proxy.ts alone is only an optimistic filter.
