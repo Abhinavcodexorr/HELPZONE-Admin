@@ -5,7 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, X } from "lucide-react";
 import { useProviders } from "@/store/ProvidersContext";
 
-const POLL_MS = 3000;
+const POLL_MS = 30_000;       // base poll interval: 30 s
+const MAX_BACKOFF_MS = 300_000; // max back-off cap: 5 min
 const TOAST_MS = 10000;
 const MAX_TOASTS = 3;
 const SOUND_SRC = "/sounds/new-provider.mp3";
@@ -73,6 +74,7 @@ export function NewProviderNotifier() {
   useEffect(() => {
     let stopped = false;
     let timer: ReturnType<typeof setTimeout>;
+    let backoff = POLL_MS;
 
     async function poll() {
       try {
@@ -82,12 +84,21 @@ export function NewProviderNotifier() {
           window.location.href = "/login";
           return;
         }
+        if (res.status === 429) {
+          // Rate-limited — exponential back-off, cap at MAX_BACKOFF_MS
+          backoff = Math.min(backoff * 2, MAX_BACKOFF_MS);
+          if (!stopped) timer = setTimeout(poll, backoff);
+          return;
+        }
+        // Successful response — reset back-off
+        backoff = POLL_MS;
         const json = (await res.json()) as { success?: boolean; latest?: LatestProvider[] };
         if (res.ok && json.success !== false && Array.isArray(json.latest)) handle(json.latest);
       } catch {
-        // Offline or backend restarting: just try again on the next tick.
+        // Offline or backend restarting: back off gently
+        backoff = Math.min(backoff * 2, MAX_BACKOFF_MS);
       }
-      if (!stopped) timer = setTimeout(poll, POLL_MS);
+      if (!stopped) timer = setTimeout(poll, backoff);
     }
 
     function handle(latest: LatestProvider[]) {
