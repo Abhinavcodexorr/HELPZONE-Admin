@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Bell, CalendarDays, Menu, Moon, Sun, Sunrise, Sunset, type LucideIcon } from "lucide-react";
+import { NEW_PROVIDER_EVENT } from "@/components/notifications/NewProviderNotifier";
 import { useProviders } from "@/store/ProvidersContext";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -23,6 +24,14 @@ export function Topbar({ onMenuClick, userName }: { onMenuClick: () => void; use
     queueMicrotask(tick);
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
+  }, []);
+
+  // Ring the bell whenever the notifier reports a new registration.
+  const [ringKey, setRingKey] = useState(0);
+  useEffect(() => {
+    const ring = () => setRingKey((k) => k + 1);
+    window.addEventListener(NEW_PROVIDER_EVENT, ring);
+    return () => window.removeEventListener(NEW_PROVIDER_EVENT, ring);
   }, []);
 
   const { providers } = useProviders();
@@ -88,7 +97,7 @@ export function Topbar({ onMenuClick, userName }: { onMenuClick: () => void; use
             title={pending > 0 ? `${pending} awaiting review` : "No new applications"}
             className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-3 hover:text-foreground"
           >
-            <Bell className="h-[18px] w-[18px]" />
+            <Bell key={ringKey} className={`h-[18px] w-[18px] ${ringKey > 0 ? "animate-bell" : ""}`} />
             {pending > 0 && (
               <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 animate-pop-in items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-white ring-2 ring-surface-2">
                 {pending > 9 ? "9+" : pending}

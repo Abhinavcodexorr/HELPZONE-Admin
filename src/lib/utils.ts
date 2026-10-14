@@ -22,6 +22,10 @@ export function formatDate(iso: string) {
   });
 }
 
+export function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }).toUpperCase();
+}
+
 export function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString("en-GB", {
     day: "numeric",

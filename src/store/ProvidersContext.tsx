@@ -9,6 +9,8 @@ interface ProvidersContextValue {
   loading: boolean;
   error: string | null;
   refresh: () => void;
+  /** Reloads the list without the loading skeleton (used by the notification poll). */
+  sync: () => Promise<void>;
   verify: (id: string) => Promise<void>;
   approve: (id: string) => Promise<void>;
   reject: (id: string, reason: string) => Promise<void>;
@@ -44,6 +46,17 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
       setError(err instanceof Error ? err.message : "Failed to load providers");
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const sync = useCallback(async () => {
+    try {
+      const res = await fetch("/api/providers?limit=200", { cache: "no-store" });
+      const json = await parseJson(res);
+      if (!res.ok || json.success === false) return;
+      setProviders(((json.data as BackendProvider[]) ?? []).map(mapToProvider));
+    } catch {
+      // Keep the current list; the next poll or manual refresh will retry.
     }
   }, []);
 
@@ -111,8 +124,8 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ providers, loading, error, refresh: load, verify, approve, reject, update, remove }),
-    [providers, loading, error, load, verify, approve, reject, update, remove]
+    () => ({ providers, loading, error, refresh: load, sync, verify, approve, reject, update, remove }),
+    [providers, loading, error, load, sync, verify, approve, reject, update, remove]
   );
 
   return <ProvidersContext.Provider value={value}>{children}</ProvidersContext.Provider>;

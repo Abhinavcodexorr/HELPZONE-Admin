@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/Badge";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
-import { formatDate } from "@/lib/utils";
-import { MessageCircle, Phone } from "lucide-react";
+import { formatDate, formatTime } from "@/lib/utils";
+import { Phone } from "lucide-react";
 import { providerStages } from "@/lib/provider-stages";
 import { ProviderStatus } from "@/types";
 import { useProviders } from "@/store/ProvidersContext";
@@ -142,18 +142,20 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1280px] text-left text-sm">
+        <table className="w-full min-w-[1400px] text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-surface-2 text-xs uppercase tracking-wide text-subtle">
-              <th className="w-20 px-4 py-3 font-medium">Photo</th>
-              <th className="min-w-[170px] px-4 py-3 font-medium">Provider</th>
-              <th className="min-w-[140px] px-4 py-3 font-medium">Category</th>
-              <th className="min-w-[130px] px-4 py-3 font-medium">Location</th>
-              <th className="min-w-[210px] px-4 py-3 font-medium">Contact</th>
-              <th className="min-w-[190px] px-4 py-3 font-medium">ID Proof</th>
+              <th className="min-w-[120px] px-4 py-3 font-medium">Applied on</th>
+              <th className="w-20 px-4 py-3 font-medium">Profile</th>
+              <th className="min-w-[160px] px-4 py-3 font-medium">Name</th>
+              <th className="min-w-[190px] px-4 py-3 font-medium">Contact</th>
+              <th className="min-w-[150px] px-4 py-3 font-medium">Services</th>
+              <th className="min-w-[120px] px-4 py-3 font-medium">Location</th>
+              <th className="min-w-[190px] px-4 py-3 font-medium">Aadhaar</th>
+              <th className="min-w-[130px] px-4 py-3 font-medium">PAN</th>
               <th className="min-w-[150px] px-4 py-3 font-medium">Video</th>
-              <th className="min-w-[120px] px-4 py-3 font-medium">Status</th>
-              <th className="min-w-[130px] px-4 py-3 text-right font-medium">Actions</th>
+              <th className="min-w-[130px] px-4 py-3 font-medium">Status</th>
+              <th className="min-w-[110px] px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -161,7 +163,6 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
               Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
             {!loading && filtered.map((p, index) => {
               const busy = busyId === p.id;
-              const showWhatsapp = p.whatsappNumber !== "—" && p.whatsappNumber !== p.mobileNumber;
               return (
                 <tr
                   key={p.id}
@@ -180,24 +181,38 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                   className="group animate-fade-in cursor-pointer border-b border-border align-middle transition-colors last:border-0 hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none"
                 >
                   <td className="px-4 py-3.5">
+                    <p className="whitespace-nowrap text-fg-2">{formatDate(p.submittedAt)}</p>
+                    <p className="whitespace-nowrap text-xs text-muted">{formatTime(p.submittedAt)}</p>
+                  </td>
+                  <td className="px-4 py-3.5">
                     <div className="relative w-fit">
                       <PhotoThumbnail provider={p} />
                       <span
-                        title={p.status}
+                        title={statusLabel[p.status]}
                         className={`absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full ring-2 ring-surface ${statusDot[p.status]}`}
                       />
                     </div>
                   </td>
                   <td className="px-4 py-3.5">
-                    <p className="whitespace-nowrap font-semibold text-foreground transition-colors group-hover:text-primary">{p.fullName}</p>
+                    <p className="whitespace-nowrap font-semibold text-foreground transition-colors group-hover:text-primary">
+                      {p.fullName}
+                    </p>
                     <p className="whitespace-nowrap text-xs text-muted">
                       {p.gender} &middot; {p.nationality}
                     </p>
-                    <p className="mt-0.5 whitespace-nowrap text-xs text-subtle">Applied {formatDate(p.submittedAt)}</p>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <p className="flex items-center gap-1.5 whitespace-nowrap text-fg-2">
+                      <Phone className="h-3 w-3 shrink-0 text-subtle" />
+                      {p.mobileNumber}
+                    </p>
+                    <p className="mt-0.5 max-w-[190px] truncate text-xs text-muted" title={p.email}>
+                      {p.email}
+                    </p>
                   </td>
                   <td className="px-4 py-3.5">
                     {p.categories.length === 0 ? (
-                      <span className="text-xs text-subtle">No category</span>
+                      <span className="text-xs text-subtle">No service</span>
                     ) : (
                       <div className="flex flex-wrap gap-1">
                         {p.categories.slice(0, 2).map((c) => (
@@ -206,7 +221,7 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                           </Badge>
                         ))}
                         {p.categories.length > 2 && (
-                          <Badge tone="gray" className="px-2" >
+                          <Badge tone="gray" className="px-2">
                             +{p.categories.length - 2}
                           </Badge>
                         )}
@@ -221,22 +236,12 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                     {p.state && <p className="whitespace-nowrap text-xs text-muted">{p.state}</p>}
                   </td>
                   <td className="px-4 py-3.5">
-                    <p className="flex items-center gap-1.5 text-fg-2">
-                      <Phone className="h-3 w-3 shrink-0 text-subtle" />
-                      {p.mobileNumber}
-                    </p>
-                    {showWhatsapp && (
-                      <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
-                        <MessageCircle className="h-3 w-3 shrink-0 text-subtle" />
-                        {p.whatsappNumber}
-                      </p>
-                    )}
-                    <p className="mt-0.5 max-w-[210px] truncate text-xs text-muted" title={p.email}>
-                      {p.email}
-                    </p>
+                    <IdProofThumbnail provider={p} />
                   </td>
                   <td className="px-4 py-3.5">
-                    <IdProofThumbnail provider={p} />
+                    <p className="whitespace-nowrap font-mono text-xs tracking-wide text-fg-2">
+                      {p.panNumber || "—"}
+                    </p>
                   </td>
                   <td className="px-4 py-3.5">
                     <VideoThumbnail provider={p} />
@@ -274,7 +279,7 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
             })}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-sm text-subtle">
+                <td colSpan={11} className="px-4 py-12 text-center text-sm text-subtle">
                   {providers.length === 0
                     ? "No provider applications yet."
                     : query
@@ -344,12 +349,19 @@ function SkeletonRow() {
   return (
     <tr className="border-b border-border align-middle last:border-0">
       <td className="px-4 py-3.5">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="mt-2 h-3 w-14" />
+      </td>
+      <td className="px-4 py-3.5">
         <Skeleton className="h-11 w-11 rounded-xl" />
       </td>
       <td className="px-4 py-3.5">
         <Skeleton className="h-4 w-28" />
         <Skeleton className="mt-2 h-3 w-20" />
-        <Skeleton className="mt-1.5 h-3 w-24" />
+      </td>
+      <td className="px-4 py-3.5">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="mt-2 h-3 w-36" />
       </td>
       <td className="px-4 py-3.5">
         <Skeleton className="h-6 w-16 rounded-full" />
@@ -358,10 +370,6 @@ function SkeletonRow() {
       <td className="px-4 py-3.5">
         <Skeleton className="h-4 w-20" />
         <Skeleton className="mt-2 h-3 w-14" />
-      </td>
-      <td className="px-4 py-3.5">
-        <Skeleton className="h-4 w-28" />
-        <Skeleton className="mt-2 h-3 w-36" />
       </td>
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-2.5">
@@ -373,13 +381,16 @@ function SkeletonRow() {
         </div>
       </td>
       <td className="px-4 py-3.5">
+        <Skeleton className="h-4 w-24" />
+      </td>
+      <td className="px-4 py-3.5">
         <div className="flex items-center gap-2.5">
           <Skeleton className="h-11 w-16 rounded-lg" />
           <Skeleton className="h-3.5 w-16" />
         </div>
       </td>
       <td className="px-4 py-3.5">
-        <Skeleton className="h-6 w-16 rounded-full" />
+        <Skeleton className="h-6 w-20 rounded-full" />
       </td>
       <td className="px-4 py-3.5">
         <div className="flex justify-end">
