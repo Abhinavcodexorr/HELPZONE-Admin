@@ -25,7 +25,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ShimmerImage } from "@/components/ui/ShimmerImage";
-import { digitsOnly, formatDate, formatDateTime, formatRupees, isPdf } from "@/lib/utils";
+import { digitsOnly, formatDateTime, formatRupees, isPdf } from "@/lib/utils";
 import { RejectModal } from "./RejectModal";
 import { ImageLightbox } from "./ImageLightbox";
 
@@ -259,9 +259,6 @@ export function ProviderDetailModal({
               <Field label="Experience">
                 {`${p.experienceYears} ${p.experienceYears === 1 ? "year" : "years"}`}
               </Field>
-              <Field label="Expected salary">
-                {p.monthlySalary !== undefined ? `${formatRupees(p.monthlySalary)} / month` : undefined}
-              </Field>
               <Field label="Preferred job">{p.preferredJob}</Field>
               <Field label="Job type">{p.duration}</Field>
               <Field label="Availability" wide>
@@ -294,35 +291,15 @@ export function ProviderDetailModal({
               </Section>
             )}
 
-            <Section icon={GraduationCap} title="Education & references">
+            <Section icon={GraduationCap} title="Education">
               <Field label="Education">{p.education}</Field>
               <Field label="Certificate">{p.certificate}</Field>
-              <Field label="Reference letter" wide>
-                {p.referenceLetterUrl ? (
-                  <a
-                    href={p.referenceLetterUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-primary hover:underline"
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                    View reference letter
-                  </a>
-                ) : p.hasReferenceLetter ? (
-                  "Has one (not uploaded)"
-                ) : (
-                  "No"
-                )}
-              </Field>
             </Section>
 
             <Section icon={IdCard} title="Identity & documents">
               <Field label="ID type">{p.kyc.idType}</Field>
               <Field label="ID number">{p.kyc.idNumber}</Field>
               <Field label="PAN number">{p.panNumber}</Field>
-              <Field label="Has passport">{yesNo(p.hasPassport)}</Field>
-              <Field label="Visa status">{p.visaStatus}</Field>
-              <Field label="Visa expiry">{p.visaExpiryDate ? formatDate(p.visaExpiryDate) : undefined}</Field>
               <div className="sm:col-span-2">
                 <p className="mb-2 text-xs text-muted">ID document</p>
                 {!p.kyc.idDocumentImage ? (

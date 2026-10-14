@@ -22,20 +22,13 @@ export interface BackendProvider {
   education?: string;
   certificate?: string;
   experienceYears?: number;
-  monthlySalary?: number;
-  monthlySalaryAed?: number;
   preferredJob?: string;
   duration?: string;
   availability?: string;
   jobDescription?: string;
   lastWorkingExperience?: Partial<LastJob>;
-  hasPassport?: boolean;
-  visaStatus?: string;
-  visaExpiryDate?: string;
   emirate?: string;
   panNumber?: string;
-  hasReferenceLetter?: boolean;
-  referenceLetterUrl?: string;
   introVideoUrl?: string;
   profileComplete?: boolean;
   imageUrl?: string;
@@ -126,19 +119,13 @@ export function mapToProvider(provider: BackendProvider): Provider {
     education: provider.education ?? "",
     certificate: provider.certificate ?? "",
     experienceYears: provider.experienceYears ?? 0,
-    monthlySalary: provider.monthlySalary ?? provider.monthlySalaryAed,
     preferredJob: provider.preferredJob ?? "",
     duration: provider.duration ?? "",
     availability: provider.availability ?? "",
     jobDescription: provider.jobDescription ?? "",
     lastJob: mapLastJob(provider.lastWorkingExperience),
-    hasPassport: provider.hasPassport ?? false,
-    visaStatus: provider.visaStatus ?? "",
-    visaExpiryDate: provider.visaExpiryDate ?? "",
     emirate: provider.emirate ?? "",
     panNumber: provider.panNumber ?? "",
-    hasReferenceLetter: provider.hasReferenceLetter ?? false,
-    referenceLetterUrl: provider.referenceLetterUrl ?? "",
     introVideoUrl: provider.introVideoUrl ?? "",
     profileComplete: provider.profileComplete ?? false,
     isActive: provider.isActive ?? true,
