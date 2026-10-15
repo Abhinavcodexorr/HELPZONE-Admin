@@ -19,7 +19,7 @@ export function SignOutEverywhereCard() {
       try {
         sessionStorage.clear();
         // Preferences, not session data, so they survive sign-out.
-        const keep = ["theme", "hz_read_notifications", "hz_notify_muted"].map(
+        const keep = ["theme", "hz_read_notifications", "hz_notify_muted", "hz_sidebar_collapsed"].map(
           (key) => [key, localStorage.getItem(key)] as const,
         );
         localStorage.clear();
@@ -38,23 +38,25 @@ export function SignOutEverywhereCard() {
 
   return (
     <Card className="p-5">
-      <div className="flex items-center gap-3.5">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-danger-soft text-danger">
-          <ShieldAlert className="h-[18px] w-[18px]" />
-        </span>
+      <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-3.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-danger-soft text-danger">
+            <ShieldAlert className="h-[18px] w-[18px]" />
+          </span>
 
-        <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold text-foreground">Sign out everywhere</h2>
-          <p className="truncate text-xs text-muted">
-            {confirming ? (
-              <span className="font-medium text-danger">Sign out of every device? This can&apos;t be undone.</span>
-            ) : (
-              "Ends every signed-in session on every device, including this one."
-            )}
-          </p>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold text-foreground">Sign out everywhere</h2>
+            <p className="text-xs text-muted sm:truncate">
+              {confirming ? (
+                <span className="font-medium text-danger">Sign out of every device? This can&apos;t be undone.</span>
+              ) : (
+                "Ends every signed-in session on every device, including this one."
+              )}
+            </p>
+          </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
           {confirming ? (
             <>
               <Button variant="secondary" size="sm" onClick={() => setConfirming(false)} disabled={working}>
