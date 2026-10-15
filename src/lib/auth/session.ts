@@ -1,5 +1,7 @@
 // Runtime-agnostic (Web Crypto only) so the proxy and route handlers share it.
 
+import { currentGeneration } from "./revocation";
+
 export const SESSION_COOKIE = "hz_admin_session";
 export const SESSION_TTL_SECONDS = 60 * 60 * 12;
 
@@ -29,13 +31,23 @@ export interface Session {
   email: string;
   // Unique per login, so a signed-out session can be revoked server-side.
   sid: string;
+  // This admin's session generation when the token was issued. "Sign out
+  // everywhere" and a password change bump the generation, which invalidates
+  // every token stamped with an older one — see revocation.ts.
+  gen: number;
   exp: number;
 }
 
 export async function createSessionToken(email: string, secret: string): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
   const payload = toBase64Url(
     encoder.encode(
-      JSON.stringify({ email, sid: crypto.randomUUID(), exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS }),
+      JSON.stringify({
+        email,
+        sid: crypto.randomUUID(),
+        gen: currentGeneration(email),
+        exp: now + SESSION_TTL_SECONDS,
+      }),
     ),
   );
   const signature = await crypto.subtle.sign("HMAC", await importKey(secret, "sign"), encoder.encode(payload));
@@ -57,10 +69,19 @@ export async function verifySessionToken(token: string | undefined, secret: stri
     );
     if (!valid) return null;
 
-    const data = JSON.parse(new TextDecoder().decode(fromBase64Url(payload))) as { email?: unknown; sid?: unknown; exp?: unknown };
+    const data = JSON.parse(new TextDecoder().decode(fromBase64Url(payload))) as {
+      email?: unknown;
+      sid?: unknown;
+      gen?: unknown;
+      exp?: unknown;
+    };
     if (typeof data.email !== "string" || typeof data.sid !== "string" || typeof data.exp !== "number") return null;
     if (data.exp < Math.floor(Date.now() / 1000)) return null;
-    return { email: data.email, sid: data.sid, exp: data.exp };
+    // Tokens issued before this file's `gen` support (none in practice, since
+    // rotating AUTH_SECRET during that rollout invalidated every old token) —
+    // treat a missing generation as "older than generation zero" so it's never trusted.
+    const gen = typeof data.gen === "number" ? data.gen : -1;
+    return { email: data.email, sid: data.sid, gen, exp: data.exp };
   } catch {
     return null;
   }

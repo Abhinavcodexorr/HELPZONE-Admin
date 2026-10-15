@@ -14,6 +14,8 @@ const MAX_TOASTS = 3;
 const SOUND_SRC = "/sounds/new-provider.mp3";
 
 export const NEW_PROVIDER_EVENT = "hz:new-provider";
+// Settings' mute toggle sets/clears this key; checked fresh before each play.
+export const NOTIFY_MUTED_KEY = "hz_notify_muted";
 
 type LatestProvider = NotificationItem;
 
@@ -135,7 +137,13 @@ export function NewProviderNotifier() {
       arrivals.forEach((t) => setTimeout(() => dismiss(t.id), TOAST_MS));
 
       const el = audio.current;
-      if (el) {
+      let muted = false;
+      try {
+        muted = localStorage.getItem(NOTIFY_MUTED_KEY) === "1";
+      } catch {
+        // Storage blocked: default to sound on.
+      }
+      if (el && !muted) {
         el.currentTime = 0;
         el.play().catch(() => {
           // Blocked until the user interacts with the page once.

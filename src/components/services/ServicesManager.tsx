@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Layers, PauseCircle, Plus, SearchX, Sparkles, Wrench } from "lucide-react";
-import type { DetectedCategory, Service } from "@/types";
+import { CheckCircle2, Layers, PauseCircle, Plus, SearchX, Wrench } from "lucide-react";
+import type { Service } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { nameFromKey } from "@/lib/services";
 import { cn } from "@/lib/utils";
 import { DeleteServiceModal } from "./DeleteServiceModal";
 import { ServiceCard } from "./ServiceCard";
@@ -21,7 +20,7 @@ type Filter = "all" | "active" | "inactive";
 type FormState = { mode: "create"; presetKey?: string; presetName?: string } | { mode: "edit"; service: Service };
 
 export function ServicesManager() {
-  const { services, detected, loading, error, reload, create, update, setActive, remove } = useServices();
+  const { services, loading, error, reload, create, update, setActive, remove } = useServices();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [form, setForm] = useState<FormState | null>(null);
@@ -87,13 +86,6 @@ export function ServicesManager() {
         <Stat icon={PauseCircle} label="Inactive" value={counts.inactive} loading={loading} tone="muted" />
       </div>
 
-      {detected.length > 0 && (
-        <DetectedBanner
-          detected={detected}
-          onAdd={(d) => setForm({ mode: "create", presetKey: d.key, presetName: nameFromKey(d.key) })}
-        />
-      )}
-
       <Card>
         <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
           <div role="tablist" aria-label="Filter services" className="flex gap-1 rounded-xl bg-surface-2 p-1 ring-1 ring-border">
@@ -145,11 +137,7 @@ export function ServicesManager() {
             <EmptyState
               icon={Wrench}
               title="No services yet"
-              description={
-                detected.length > 0
-                  ? "Add the categories your providers already use above, or create a new service."
-                  : "Create your first service so providers can choose it when they register."
-              }
+              description="Create your first service so providers can choose it when they register."
             />
           ) : visible.length === 0 ? (
             <EmptyState icon={SearchX} title="No services match" description="Try a different search or filter." />
@@ -254,40 +242,6 @@ function Stat({
         <p className="text-xs text-muted">{label}</p>
       </div>
     </Card>
-  );
-}
-
-function DetectedBanner({ detected, onAdd }: { detected: DetectedCategory[]; onAdd: (d: DetectedCategory) => void }) {
-  return (
-    <div className="mb-5 rounded-2xl border border-warning/30 bg-warning-soft/60 p-4">
-      <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-warning-soft text-warning">
-          <Sparkles className="h-[18px] w-[18px]" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-foreground">
-            {detected.length} {detected.length === 1 ? "category is" : "categories are"} used by providers but not in your
-            catalog
-          </p>
-          <p className="mt-0.5 text-xs text-muted">Add them so you can manage, rename or hide them.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {detected.map((d) => (
-              <button
-                key={d.key}
-                onClick={() => onAdd(d)}
-                className="flex items-center gap-2 rounded-lg bg-surface px-2.5 py-1.5 text-xs font-medium text-fg-2 ring-1 ring-border transition hover:ring-primary active:scale-95"
-              >
-                <Plus className="h-3.5 w-3.5 text-primary" />
-                {nameFromKey(d.key)}
-                <span className="rounded-full bg-surface-3 px-1.5 py-0.5 text-[10px] tabular-nums text-muted">
-                  {d.providerCount}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
 

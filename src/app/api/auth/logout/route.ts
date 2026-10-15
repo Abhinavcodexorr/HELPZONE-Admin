@@ -19,9 +19,6 @@ export async function POST(req: NextRequest) {
     maxAge: 0,
     expires: new Date(0),
   });
-  // Cached copies of signed-in pages must not outlive the session. Only "cache" is
-  // listed: "cookies"/"storage" would also wipe other apps on the same host.
   res.headers.set("Cache-Control", "no-store");
-  res.headers.set("Clear-Site-Data", '"cache"');
   return res;
 }

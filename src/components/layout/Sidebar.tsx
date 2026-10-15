@@ -8,7 +8,6 @@ import { cn, displayNameFromEmail } from "@/lib/utils";
 import { Logo } from "@/components/ui/Logo";
 import { signOut } from "@/lib/auth/client";
 import { providerStages } from "@/lib/provider-stages";
-import { useProviders } from "@/store/ProvidersContext";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -34,14 +33,6 @@ export function Sidebar({ onNavigate, userEmail }: { onNavigate?: () => void; us
       setSignOutFailed(true);
     }
   }
-  const { providers } = useProviders();
-  const stageCounts = {
-    pending: providers.filter((p) => p.status === "pending").length,
-    verification: providers.filter((p) => p.status === "verification").length,
-    approved: providers.filter((p) => p.status === "approved").length,
-    rejected: providers.filter((p) => p.status === "rejected").length,
-  };
-
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-sidebar">
       <div className="px-5 pb-5 pt-6">
@@ -90,9 +81,8 @@ export function Sidebar({ onNavigate, userEmail }: { onNavigate?: () => void; us
 
               {isProviders && providersOpen && (
                 <div className="ml-[22px] mt-1 animate-fade-in space-y-0.5 border-l border-border pl-3">
-                  {providerStages.map(({ slug, label: stageLabel, status, icon: StageIcon }) => {
+                  {providerStages.map(({ slug, label: stageLabel, icon: StageIcon }) => {
                     const stageActive = pathname === `/providers/${slug}`;
-                    const count = stageCounts[status];
                     return (
                       <Link
                         key={slug}
@@ -107,20 +97,6 @@ export function Sidebar({ onNavigate, userEmail }: { onNavigate?: () => void; us
                       >
                         <StageIcon className="h-4 w-4" />
                         {stageLabel}
-                        {count > 0 && (
-                          <span
-                            className={cn(
-                              "ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
-                              stageActive
-                                ? "bg-white/20 text-primary-foreground"
-                                : status === "pending"
-                                  ? "bg-warning-soft text-warning"
-                                  : "bg-surface-3 text-muted"
-                            )}
-                          >
-                            {count}
-                          </span>
-                        )}
                       </Link>
                     );
                   })}
@@ -133,8 +109,14 @@ export function Sidebar({ onNavigate, userEmail }: { onNavigate?: () => void; us
 
       <div className="space-y-2 border-t border-border px-3 py-3">
         <Link
-          href="#"
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-fg transition-colors hover:bg-sidebar-hover hover:text-foreground"
+          href="/settings"
+          onClick={onNavigate}
+          className={cn(
+            "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+            pathname === "/settings"
+              ? "bg-primary-soft text-primary"
+              : "text-sidebar-fg hover:bg-sidebar-hover hover:text-foreground"
+          )}
         >
           <Settings className="h-[18px] w-[18px]" />
           Settings
