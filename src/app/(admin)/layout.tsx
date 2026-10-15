@@ -3,6 +3,7 @@ import { SessionGuard } from "@/components/auth/SessionGuard";
 import { NewProviderNotifier } from "@/components/notifications/NewProviderNotifier";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { getSession } from "@/lib/auth/guard";
+import { NotificationsProvider } from "@/store/NotificationsContext";
 import { ProvidersProvider } from "@/store/ProvidersContext";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -12,9 +13,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <ProvidersProvider>
-      <SessionGuard />
-      <NewProviderNotifier />
-      <DashboardShell userEmail={session.email}>{children}</DashboardShell>
+      <NotificationsProvider>
+        <SessionGuard />
+        <NewProviderNotifier />
+        <DashboardShell userEmail={session.email}>{children}</DashboardShell>
+      </NotificationsProvider>
     </ProvidersProvider>
   );
 }

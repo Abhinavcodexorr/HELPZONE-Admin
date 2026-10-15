@@ -41,7 +41,7 @@ const statusLabel: Record<ProviderStatus, string> = {
 };
 
 export function ProvidersTable({ status }: { status: ProviderStatus }) {
-  const { providers, loading, error, refresh, verify, approve, reject, update, remove } = useProviders();
+  const { providers, loading, error, refresh, viewRequest, requestView, verify, approve, reject, update, remove } = useProviders();
   const stage = providerStages.find((t) => t.status === status) ?? providerStages[0];
   // Each stage page mounts its own table, so opening a stage reloads the list
   // from the API and every stage shows current data. On a hard page load the
@@ -62,6 +62,16 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  // A notification asked for this provider's details: open the popup once the
+  // list contains it (the list may still be reloading), then clear the request.
+  useEffect(() => {
+    if (!viewRequest || !providers.some((p) => p.id === viewRequest)) return;
+    queueMicrotask(() => {
+      setViewingId(viewRequest);
+      requestView(null);
+    });
+  }, [viewRequest, providers, requestView]);
 
   async function runAction(id: string, action: () => Promise<void>, fallback: string) {
     setActionError(null);

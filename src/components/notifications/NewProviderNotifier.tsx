@@ -1,25 +1,21 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, X } from "lucide-react";
+import { useNotifications, type NotificationItem } from "@/store/NotificationsContext";
 import { useProviders } from "@/store/ProvidersContext";
 
 const POLL_MS = 30_000;       // base poll interval: 30 s
 const MAX_BACKOFF_MS = 300_000; // max back-off cap: 5 min
+const POLL_TIMEOUT_MS = 8000;
 const TOAST_MS = 10000;
 const MAX_TOASTS = 3;
 const SOUND_SRC = "/sounds/new-provider.mp3";
 
 export const NEW_PROVIDER_EVENT = "hz:new-provider";
 
-interface LatestProvider {
-  id: string;
-  fullName: string;
-  city?: string;
-  state?: string;
-  createdAt: string;
-}
+type LatestProvider = NotificationItem;
 
 interface Toast {
   id: string;
@@ -33,14 +29,28 @@ interface Toast {
  * reloads the list so the new request is already in "New Request".
  */
 export function NewProviderNotifier() {
-  const { sync } = useProviders();
+  const router = useRouter();
+  const { sync, requestView } = useProviders();
+  const { setItems, markRead } = useNotifications();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const known = useRef<Set<string> | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const syncRef = useRef(sync);
+  const setItemsRef = useRef(setItems);
   useEffect(() => {
     syncRef.current = sync;
-  }, [sync]);
+    setItemsRef.current = setItems;
+  }, [sync, setItems]);
+
+  const open = useCallback(
+    (id: string) => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+      markRead(id);
+      requestView(id);
+      router.push("/providers/new");
+    },
+    [markRead, requestView, router],
+  );
 
   const dismiss = useCallback((id: string) => setToasts((prev) => prev.filter((t) => t.id !== id)), []);
 
@@ -78,7 +88,8 @@ export function NewProviderNotifier() {
 
     async function poll() {
       try {
-        const res = await fetch("/api/providers/summary", { cache: "no-store" });
+        // A hung request must not stall the loop, so each poll gives up after a few seconds.
+        const res = await fetch("/api/providers/summary", { cache: "no-store", signal: AbortSignal.timeout(POLL_TIMEOUT_MS) });
         if (res.status === 401) {
           // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- session ended, reload to sign in
           window.location.href = "/login";
@@ -102,6 +113,7 @@ export function NewProviderNotifier() {
     }
 
     function handle(latest: LatestProvider[]) {
+      setItemsRef.current(latest);
       // First response only records what already exists.
       if (known.current === null) {
         known.current = new Set(latest.map((p) => p.id));
@@ -148,7 +160,8 @@ export function NewProviderNotifier() {
         <div
           key={t.id}
           role="status"
-          className="pointer-events-auto animate-pop-in overflow-hidden rounded-2xl border border-border bg-surface shadow-xl"
+          onClick={() => open(t.id)}
+          className="pointer-events-auto animate-pop-in cursor-pointer overflow-hidden rounded-2xl border border-border bg-surface shadow-xl transition hover:border-primary/40 hover:shadow-2xl"
         >
           <div className="flex items-start gap-3 p-3.5">
             <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary">
@@ -159,16 +172,13 @@ export function NewProviderNotifier() {
               <p className="text-sm font-semibold text-foreground">New provider registered</p>
               <p className="truncate text-sm text-fg-2">{t.name}</p>
               {t.place && <p className="truncate text-xs text-muted">{t.place}</p>}
-              <Link
-                href="/providers/new"
-                onClick={() => dismiss(t.id)}
-                className="mt-2 inline-block text-xs font-semibold text-primary hover:underline"
-              >
-                Review in New Request →
-              </Link>
+              <span className="mt-2 inline-block text-xs font-semibold text-primary">View details →</span>
             </div>
             <button
-              onClick={() => dismiss(t.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                dismiss(t.id);
+              }}
               aria-label="Dismiss notification"
               className="rounded-lg p-1 text-subtle transition hover:bg-surface-3 hover:text-foreground"
             >

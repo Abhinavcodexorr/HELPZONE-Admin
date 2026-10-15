@@ -190,6 +190,27 @@
       fill 0.2s ease, stroke 0.2s ease;
   }
 
+  /* Hand cursor on everything clickable (Tailwind's reset makes buttons use the arrow). */
+  button:not(:disabled),
+  a[href],
+  summary,
+  select:not(:disabled),
+  label[for],
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  [role="menuitem"],
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  tr[tabindex="0"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
   body {
     background-color: var(--background);
     background-image:

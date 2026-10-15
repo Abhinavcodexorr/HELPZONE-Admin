@@ -11,9 +11,12 @@ export async function signOut(): Promise<boolean> {
 
   try {
     sessionStorage.clear();
-    const theme = localStorage.getItem("theme");
+    // Preferences, not session data, so they survive sign-out.
+    const keep = ["theme", "hz_read_notifications"].map((key) => [key, localStorage.getItem(key)] as const);
     localStorage.clear();
-    if (theme) localStorage.setItem("theme", theme);
+    keep.forEach(([key, value]) => {
+      if (value) localStorage.setItem(key, value);
+    });
   } catch {
     // Storage can be blocked; the session is already revoked, so carry on.
   }

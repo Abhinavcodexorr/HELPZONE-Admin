@@ -1,10 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Bell, CalendarDays, Menu, Moon, Sun, Sunrise, Sunset, type LucideIcon } from "lucide-react";
-import { NEW_PROVIDER_EVENT } from "@/components/notifications/NewProviderNotifier";
-import { useProviders } from "@/store/ProvidersContext";
+import { CalendarDays, Menu, Moon, Sun, Sunrise, Sunset, type LucideIcon } from "lucide-react";
+import { NotificationsMenu } from "@/components/notifications/NotificationsMenu";
 import { ThemeToggle } from "./ThemeToggle";
 
 function greetingFor(date: Date | null): { text: string; Icon: LucideIcon } {
@@ -25,17 +23,6 @@ export function Topbar({ onMenuClick, userName }: { onMenuClick: () => void; use
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
-
-  // Ring the bell whenever the notifier reports a new registration.
-  const [ringKey, setRingKey] = useState(0);
-  useEffect(() => {
-    const ring = () => setRingKey((k) => k + 1);
-    window.addEventListener(NEW_PROVIDER_EVENT, ring);
-    return () => window.removeEventListener(NEW_PROVIDER_EVENT, ring);
-  }, []);
-
-  const { providers } = useProviders();
-  const pending = providers.filter((p) => p.status === "pending").length;
 
   const date = now?.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
   const [clock, period] = (
@@ -91,19 +78,7 @@ export function Topbar({ onMenuClick, userName }: { onMenuClick: () => void; use
       <div className="col-start-3 flex items-center justify-end gap-2">
         <div className="flex items-center gap-0.5 rounded-xl bg-surface-2 p-1 ring-1 ring-border">
           <ThemeToggle />
-          <Link
-            href="/providers/new"
-            aria-label={pending > 0 ? `${pending} applications awaiting review` : "Notifications"}
-            title={pending > 0 ? `${pending} awaiting review` : "No new applications"}
-            className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-3 hover:text-foreground"
-          >
-            <Bell key={ringKey} className={`h-[18px] w-[18px] ${ringKey > 0 ? "animate-bell" : ""}`} />
-            {pending > 0 && (
-              <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 animate-pop-in items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-white ring-2 ring-surface-2">
-                {pending > 9 ? "9+" : pending}
-              </span>
-            )}
-          </Link>
+          <NotificationsMenu />
         </div>
         <div className="relative">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-sm ring-2 ring-primary/20">

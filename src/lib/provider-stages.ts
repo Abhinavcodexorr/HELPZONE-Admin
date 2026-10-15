@@ -17,3 +17,5 @@ export const providerStages: ProviderStage[] = [
 ];
 
 export const stageBySlug = (slug: string) => providerStages.find((s) => s.slug === slug);
+
+export const stageForStatus = (status: ProviderStatus) => providerStages.find((s) => s.status === status);

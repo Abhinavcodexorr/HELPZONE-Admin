@@ -95,15 +95,33 @@ export interface UpdateProviderInput {
   };
 }
 
+// A catalog entry managed under Services. Providers reference it by `key`
+// (e.g. "cat-cook") in their categoryIds, so the key never changes after creation.
 export interface Service {
   id: string;
+  key: string;
   name: string;
-  category: ServiceCategory;
   description: string;
-  basePrice: number;
-  priceUnit: "hour" | "visit" | "month";
-  activeProviders: number;
-  bookingsThisMonth: number;
-  isActive: boolean;
   icon: string;
+  isActive: boolean;
+  providerCount: number;
+  approvedProviderCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// A category id providers already use that has no catalog entry yet.
+export interface DetectedCategory {
+  key: string;
+  providerCount: number;
+  approvedProviderCount: number;
+}
+
+export interface ServiceInput {
+  name: string;
+  description: string;
+  icon: string;
+  isActive?: boolean;
+  /** Only sent when creating from a detected category. */
+  key?: string;
 }
