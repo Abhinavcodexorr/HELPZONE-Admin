@@ -19,10 +19,14 @@ const DURATION_MS = 5200;
 const RINGS = 4;
 const RING_GAP = 58;
 const SEGMENTS = 120;
+// Ambient waves: the first one soon after load, then one every few seconds.
+const FIRST_AMBIENT_MS = 700;
+const AMBIENT_GAP_MIN_MS = 3200;
+const AMBIENT_GAP_MAX_MS = 5200;
 
 /**
- * Click (or tap) the background and slow, wobbly water waves spread out from that
- * point and fade. Each ring is an irregular loop (not a perfect circle) whose shape
+ * Slow, wobbly water waves spread out on their own every few seconds, and clicking
+ * (or tapping) the background adds one right where you pressed. Each ring is an irregular loop (not a perfect circle) whose shape
  * keeps drifting as it travels. Drawn on a canvas over the background and under the
  * card; clicks on anything marked [data-no-ripple] (the form) are ignored.
  */
@@ -160,8 +164,34 @@ export function WaterRipples() {
     host.addEventListener("pointerdown", onPointerDown);
     window.addEventListener(RIPPLE_EVENT, onTrigger);
 
+    // Ambient drops at random spots, kept off the form so they stay visible.
+    let ambientTimer: ReturnType<typeof setTimeout>;
+    function ambientDrop() {
+      if (!document.hidden) {
+        const rect = host!.getBoundingClientRect();
+        const blocked = [...host!.querySelectorAll("[data-no-ripple]")].map((el) => el.getBoundingClientRect());
+        let x = 0;
+        let y = 0;
+        for (let attempt = 0; attempt < 8; attempt += 1) {
+          x = rect.left + rect.width * (0.06 + Math.random() * 0.88);
+          y = rect.top + rect.height * (0.08 + Math.random() * 0.84);
+          const insideForm = blocked.some(
+            (b) => x > b.left - 30 && x < b.right + 30 && y > b.top - 30 && y < b.bottom + 30,
+          );
+          if (!insideForm) break;
+        }
+        addRipple(x, y);
+      }
+      ambientTimer = setTimeout(
+        ambientDrop,
+        AMBIENT_GAP_MIN_MS + Math.random() * (AMBIENT_GAP_MAX_MS - AMBIENT_GAP_MIN_MS),
+      );
+    }
+    ambientTimer = setTimeout(ambientDrop, FIRST_AMBIENT_MS);
+
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(ambientTimer);
       window.removeEventListener("resize", resize);
       host.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener(RIPPLE_EVENT, onTrigger);
