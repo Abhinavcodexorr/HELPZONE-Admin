@@ -19,7 +19,7 @@ export function SignOutEverywhereCard() {
       try {
         sessionStorage.clear();
         // Preferences, not session data, so they survive sign-out.
-        const keep = ["theme", "hz_read_notifications", "hz_notify_muted", "hz_sidebar_collapsed"].map(
+        const keep = ["hz_read_notifications", "hz_notify_muted", "hz_sidebar_collapsed"].map(
           (key) => [key, localStorage.getItem(key)] as const,
         );
         localStorage.clear();

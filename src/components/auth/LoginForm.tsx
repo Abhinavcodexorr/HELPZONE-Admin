@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { RIPPLE_EVENT } from "@/components/auth/WaterRipples";
 import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, TriangleAlert } from "lucide-react";
 
 const inputClass =
-  "w-full rounded-2xl border border-border bg-surface-2 py-3 pl-11 pr-4 text-sm text-foreground shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)] outline-none transition focus:border-primary focus:bg-surface focus:ring-4 focus:ring-primary/15";
+  "login-input peer w-full rounded-2xl border-2 border-[#b7c3e0] bg-white py-3.5 pl-[3.6rem] pr-4 text-[15px] font-medium text-black caret-black placeholder:font-normal placeholder:text-[#9aa7c7] shadow-[0_1px_0_rgba(255,255,255,0.9),inset_0_1px_3px_rgba(30,60,150,0.07)] outline-none transition focus:border-[#2f5be0] focus:ring-4 focus:ring-[#2f5be0]/15";
+
+// Icon chip that sits inside the field and turns solid blue while it has focus.
+const chipClass =
+  "pointer-events-none absolute left-2.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl bg-[#e8efff] text-[#4a6fd8] transition-colors duration-200 peer-focus:bg-[#2f5be0] peer-focus:text-white";
 
 export function LoginForm({ next }: { next: string }) {
   const [email, setEmail] = useState("");
@@ -17,14 +20,6 @@ export function LoginForm({ next }: { next: string }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // A water wave spreads out from the Sign in button (click or Enter).
-    const button = e.currentTarget.querySelector<HTMLElement>("button[type=submit]");
-    if (button) {
-      const rect = button.getBoundingClientRect();
-      window.dispatchEvent(
-        new CustomEvent(RIPPLE_EVENT, { detail: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } }),
-      );
-    }
     setLoading(true);
     setError(null);
     try {
@@ -50,11 +45,10 @@ export function LoginForm({ next }: { next: string }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       <div>
-        <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-fg-2">
+        <label htmlFor="email" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5b6a94]">
           Email
         </label>
         <div className="relative">
-          <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" />
           <input
             id="email"
             name="email"
@@ -67,15 +61,17 @@ export function LoginForm({ next }: { next: string }) {
             placeholder="you@company.com"
             className={inputClass}
           />
+          <span className={chipClass}>
+            <Mail className="h-4 w-4" />
+          </span>
         </div>
       </div>
 
       <div>
-        <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-fg-2">
+        <label htmlFor="password" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.16em] text-[#5b6a94]">
           Password
         </label>
         <div className="relative">
-          <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" />
           <input
             id="password"
             name="password"
@@ -89,11 +85,14 @@ export function LoginForm({ next }: { next: string }) {
             placeholder="Enter your password"
             className={`${inputClass} pr-12`}
           />
+          <span className={chipClass}>
+            <Lock className="h-4 w-4" />
+          </span>
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? "Hide password" : "Show password"}
-            className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition hover:bg-surface-3 hover:text-foreground"
+            className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-[#7a89b0] transition hover:bg-[#e8efff] hover:text-[#2f5be0]"
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
@@ -101,7 +100,7 @@ export function LoginForm({ next }: { next: string }) {
       </div>
 
       {capsLock && (
-        <p className="-mt-2 flex animate-fade-in items-center gap-1.5 text-xs font-medium text-warning">
+        <p className="flex animate-fade-in items-center gap-1.5 rounded-lg bg-[#e8efff] px-3 py-2 text-xs font-medium text-[#2f5be0]">
           <TriangleAlert className="h-3.5 w-3.5" /> Caps Lock is on
         </p>
       )}
@@ -109,7 +108,7 @@ export function LoginForm({ next }: { next: string }) {
       {error && (
         <div
           role="alert"
-          className="flex animate-pop-in items-start gap-2.5 rounded-xl bg-danger-soft px-3.5 py-3 text-sm text-danger"
+          className="flex animate-pop-in items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-600"
         >
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           {error}
@@ -119,8 +118,13 @@ export function LoginForm({ next }: { next: string }) {
       <button
         type="submit"
         disabled={loading || !email || !password}
-        className="btn-jelly mt-2 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn-blue group relative mt-2 flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl px-4 py-4 text-[15px] font-semibold disabled:cursor-not-allowed disabled:opacity-55"
       >
+        {/* light sweep on hover */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 -left-1/2 w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 group-hover:translate-x-[300%]"
+        />
         {loading ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -129,7 +133,7 @@ export function LoginForm({ next }: { next: string }) {
         ) : (
           <>
             Sign in
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
           </>
         )}
       </button>

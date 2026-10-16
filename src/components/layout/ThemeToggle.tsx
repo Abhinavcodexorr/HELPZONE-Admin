@@ -3,12 +3,13 @@
 import { useLayoutEffect } from "react";
 import { Moon, Sun } from "lucide-react";
 
+// Light by default, always. Dark only lasts for this tab's session.
 function resolveTheme(): "light" | "dark" {
   try {
-    const saved = localStorage.getItem("theme");
-    if (saved === "light" || saved === "dark") return saved;
-  } catch {}
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    return sessionStorage.getItem("theme") === "dark" ? "dark" : "light";
+  } catch {
+    return "light";
+  }
 }
 
 export function ThemeToggle() {
@@ -22,7 +23,7 @@ export function ThemeToggle() {
     const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", next);
     try {
-      localStorage.setItem("theme", next);
+      sessionStorage.setItem("theme", next);
     } catch {}
   }
 

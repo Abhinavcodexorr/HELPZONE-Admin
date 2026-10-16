@@ -1,25 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, BellOff, Laptop, Moon, ShieldCheck, Sun } from "lucide-react";
+import { Bell, BellOff, Moon, ShieldCheck, Sun } from "lucide-react";
 import { NOTIFY_MUTED_KEY } from "@/components/notifications/NewProviderNotifier";
 import { Card } from "@/components/ui/Card";
 import { cn, displayNameFromEmail } from "@/lib/utils";
 
-type Mode = "light" | "dark" | "system";
+type Mode = "light" | "dark";
 
 const options: { value: Mode; label: string; icon: typeof Sun }[] = [
   { value: "light", label: "Light", icon: Sun },
   { value: "dark", label: "Dark", icon: Moon },
-  { value: "system", label: "System", icon: Laptop },
 ];
 
 function applyTheme(mode: Mode) {
-  const resolved = mode === "system" ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : mode;
-  document.documentElement.setAttribute("data-theme", resolved);
+  document.documentElement.setAttribute("data-theme", mode);
   try {
-    if (mode === "system") localStorage.removeItem("theme");
-    else localStorage.setItem("theme", mode);
+    // Session only: the panel always opens in light mode.
+    sessionStorage.setItem("theme", mode);
   } catch {
     // Storage blocked: the choice still applies for this page view.
   }
@@ -32,11 +30,10 @@ export function AppearanceCard({ email }: { email: string }) {
   useEffect(() => {
     queueMicrotask(() => {
       try {
-        const saved = localStorage.getItem("theme");
-        setMode(saved === "light" || saved === "dark" ? saved : "system");
+        setMode(sessionStorage.getItem("theme") === "dark" ? "dark" : "light");
         setMuted(localStorage.getItem(NOTIFY_MUTED_KEY) === "1");
       } catch {
-        setMode("system");
+        setMode("light");
       }
     });
   }, []);
@@ -60,9 +57,9 @@ export function AppearanceCard({ email }: { email: string }) {
   return (
     <Card className="p-5">
       <h2 className="text-sm font-semibold text-foreground">Appearance</h2>
-      <p className="mt-0.5 text-xs text-muted">Choose how the panel looks on this device.</p>
+      <p className="mt-0.5 text-xs text-muted">The panel opens in light mode. Dark lasts until you close this tab.</p>
 
-      <div role="radiogroup" aria-label="Theme" className="mt-4 grid grid-cols-3 gap-2">
+      <div role="radiogroup" aria-label="Theme" className="mt-4 grid grid-cols-2 gap-2">
         {options.map(({ value, label, icon: Icon }) => (
           <button
             key={value}
