@@ -135,6 +135,7 @@ export function ProviderDetailModal({
   const waDigits = digitsOnly(p.whatsappNumber === "—" ? "" : p.whatsappNumber);
   const waNumber = waDigits.length === 10 ? `91${waDigits}` : waDigits;
   const idIsPdf = isPdf(p.kyc.idDocumentImage);
+  const panIsPdf = isPdf(p.panCard?.idDocumentImage ?? "");
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -341,7 +342,7 @@ export function ProviderDetailModal({
           <InfoCard icon={IdCard} iconBg="bg-danger-soft text-danger" title="🪪 Identity & Documents">
             <Row label="ID Type" value={p.kyc.idType} />
             <Row label="ID Number" value={p.kyc.idNumber} />
-            <Row label="PAN Number" value={p.panNumber} />
+            <Row label="PAN Number" value={p.panCard?.idNumber ?? p.panNumber} />
 
             {/* ID Document image/pdf */}
             <div className="mt-4">
@@ -378,6 +379,51 @@ export function ProviderDetailModal({
                   <ShimmerImage
                     src={p.kyc.idDocumentImage}
                     alt={`${p.fullName} ${p.kyc.idType}`}
+                    wrapperClassName="h-44 w-full"
+                    imgClassName="transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/30 group-hover:opacity-100">
+                    <ZoomIn className="h-6 w-6 text-white" />
+                  </span>
+                </button>
+              )}
+            </div>
+
+            {/* PAN Card image/pdf */}
+            <div className="mt-4">
+              <p className="mb-2 text-xs font-medium text-muted">🪪 PAN Card</p>
+              {!p.panCard?.idDocumentImage ? (
+                <div className="flex h-24 items-center justify-center rounded-xl border-2 border-dashed border-border text-sm text-subtle">
+                  No document uploaded
+                </div>
+              ) : panIsPdf ? (
+                <a
+                  href={p.panCard.idDocumentImage}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-3 rounded-xl bg-surface-2 p-4 ring-1 ring-border transition hover:ring-primary"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-danger-soft text-danger">
+                    <FileText className="h-5 w-5" />
+                  </span>
+                  <span className="flex-1 text-sm font-semibold text-foreground">Open PAN Card (PDF)</span>
+                  <ExternalLink className="h-4 w-4 text-muted" />
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLightbox({
+                      src: p.panCard!.idDocumentImage,
+                      alt: `${p.fullName} PAN Card`,
+                      caption: `PAN Card · ${p.panCard!.idNumber}`,
+                    })
+                  }
+                  className="group relative block w-full max-w-xs overflow-hidden rounded-xl ring-1 ring-border"
+                >
+                  <ShimmerImage
+                    src={p.panCard.idDocumentImage}
+                    alt={`${p.fullName} PAN Card`}
                     wrapperClassName="h-44 w-full"
                     imgClassName="transition-transform duration-500 group-hover:scale-105"
                   />

@@ -34,6 +34,9 @@ export interface BackendProvider {
   profileComplete?: boolean;
   imageUrl?: string;
   kyc?: { idType?: string; idNumber?: string; idDocumentUrl?: string };
+  // Full list of KYC documents the provider submitted (kyc above is just the
+  // first one) — a PAN card, if submitted, shows up here as its own entry.
+  kycDocuments?: { idType?: string; idNumber?: string; idDocumentUrl?: string }[];
   applicationStatus: "pending" | "verification" | "approved" | "rejected";
   rejectionReason?: string;
   isActive?: boolean;
@@ -141,5 +144,13 @@ export function mapToProvider(provider: BackendProvider): Provider {
       idDocumentImage: provider.kyc?.idDocumentUrl || "",
       photoImage: provider.imageUrl || "",
     },
+    panCard: mapPanCard(provider.kycDocuments),
   };
+}
+
+// Finds the kycDocuments entry (if any) that is a PAN card, by idType.
+function mapPanCard(docs?: BackendProvider["kycDocuments"]): Provider["panCard"] {
+  const pan = docs?.find((d) => /pan/i.test(d.idType ?? ""));
+  if (!pan?.idDocumentUrl) return null;
+  return { idNumber: pan.idNumber || "—", idDocumentImage: pan.idDocumentUrl };
 }

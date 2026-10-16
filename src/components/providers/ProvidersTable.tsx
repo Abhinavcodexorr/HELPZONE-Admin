@@ -10,6 +10,7 @@ import { Phone } from "lucide-react";
 import { providerStages } from "@/lib/provider-stages";
 import { ProviderStatus } from "@/types";
 import { useProviders } from "@/store/ProvidersContext";
+import { DocumentThumbnail } from "./DocumentThumbnail";
 import { IdProofThumbnail } from "./IdProofThumbnail";
 import { PhotoThumbnail } from "./PhotoThumbnail";
 import { VideoThumbnail } from "./VideoThumbnail";
@@ -162,7 +163,7 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
               <th className="min-w-[150px] px-4 py-3 font-medium">Services</th>
               <th className="min-w-[120px] px-4 py-3 font-medium">Location</th>
               <th className="min-w-[190px] px-4 py-3 font-medium">Aadhaar</th>
-              <th className="min-w-[130px] px-4 py-3 font-medium">PAN</th>
+              <th className="min-w-[190px] px-4 py-3 font-medium">PAN</th>
               <th className="min-w-[150px] px-4 py-3 font-medium">Video</th>
               <th className="min-w-[130px] px-4 py-3 font-medium">Status</th>
               <th className="min-w-[110px] px-4 py-3 text-right font-medium">Actions</th>
@@ -249,9 +250,18 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                     <IdProofThumbnail provider={p} />
                   </td>
                   <td className="px-4 py-3.5">
-                    <p className="whitespace-nowrap font-mono text-xs tracking-wide text-fg-2">
-                      {p.panNumber || "—"}
-                    </p>
+                    {p.panCard ? (
+                      <DocumentThumbnail
+                        providerName={p.fullName}
+                        idType="PAN Card"
+                        idNumber={p.panCard.idNumber}
+                        idDocumentImage={p.panCard.idDocumentImage}
+                      />
+                    ) : (
+                      <p className="whitespace-nowrap font-mono text-xs tracking-wide text-fg-2">
+                        {p.panNumber || "—"}
+                      </p>
+                    )}
                   </td>
                   <td className="px-4 py-3.5">
                     <VideoThumbnail provider={p} />
@@ -391,7 +401,13 @@ function SkeletonRow() {
         </div>
       </td>
       <td className="px-4 py-3.5">
-        <Skeleton className="h-4 w-24" />
+        <div className="flex items-center gap-2.5">
+          <Skeleton className="h-11 w-16 rounded-lg" />
+          <div className="space-y-2">
+            <Skeleton className="h-3.5 w-20" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
       </td>
       <td className="px-4 py-3.5">
         <div className="flex items-center gap-2.5">

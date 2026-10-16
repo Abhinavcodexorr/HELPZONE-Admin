@@ -77,6 +77,11 @@ export interface Provider {
     idDocumentImage: string;
     photoImage: string;
   };
+  /** A separate kycDocuments entry whose idType is a PAN card, if the provider submitted one. */
+  panCard: {
+    idNumber: string;
+    idDocumentImage: string;
+  } | null;
 }
 
 export interface UpdateProviderInput {
