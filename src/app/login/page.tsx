@@ -1,73 +1,59 @@
 import type { Metadata } from "next";
-import { BadgeCheck, ShieldCheck, Video } from "lucide-react";
+import { Lock, ShieldCheck } from "lucide-react";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { TiltCard } from "@/components/auth/TiltCard";
+import { WaterRipples } from "@/components/auth/WaterRipples";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Logo } from "@/components/ui/Logo";
 import { safeNextPath } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Sign in · Help Zone Admin" };
 
-const highlights = [
-  { icon: ShieldCheck, text: "Review KYC documents and ID proofs in one place" },
-  { icon: Video, text: "Watch intro videos before approving a provider" },
-  { icon: BadgeCheck, text: "Approve or reject applications in a click" },
-];
-
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-2">
-      <section className="relative hidden overflow-hidden bg-gradient-to-br from-[#091024] via-[#122579] to-[#2a56d6] p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-indigo-400/20 blur-3xl" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-[#070d20] via-[#0f2070] to-[#2a56d6] px-5 py-10">
+      {/* dot grid */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          backgroundImage: "radial-gradient(rgba(255,255,255,0.22) 1px, transparent 1px)",
+          backgroundSize: "26px 26px",
+          maskImage: "radial-gradient(ellipse at 50% 45%, black 15%, transparent 75%)",
+          WebkitMaskImage: "radial-gradient(ellipse at 50% 45%, black 15%, transparent 75%)",
+        }}
+      />
 
-        <Logo surface="dark" className="relative h-16 w-auto self-start" />
+      <WaterRipples />
 
-        <div className="relative max-w-md">
-          <h1 className="text-4xl font-semibold leading-tight tracking-tight">
-            Verify every provider with confidence.
-          </h1>
-          <p className="mt-4 text-base text-blue-100">
-            The Help Zone admin panel for reviewing applications, documents and videos.
-          </p>
-          <ul className="mt-8 space-y-4">
-            {highlights.map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-center gap-3 text-sm text-blue-50">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
-                  <Icon className="h-4 w-4" />
-                </span>
-                {text}
-              </li>
-            ))}
-          </ul>
+      <div data-no-ripple className="absolute right-4 top-4 z-20 [&_button]:text-white/90 [&_button:hover]:bg-white/15 [&_button:hover]:text-white">
+        <ThemeToggle />
+      </div>
+
+      <div data-no-ripple className="relative z-10 w-full max-w-[26rem] animate-pop-in">
+        <div className="mb-7 flex justify-center">
+          <Logo surface="dark" className="h-14 w-auto" />
         </div>
 
-        <p className="relative text-xs text-blue-200">© Help Zone. Authorised administrators only.</p>
-      </section>
-
-      <section className="relative flex items-center justify-center p-6 sm:p-10">
-        <div className="absolute right-4 top-4">
-          <ThemeToggle />
-        </div>
-
-        <div className="w-full max-w-md animate-pop-in">
-          <div className="mb-8 lg:hidden">
-            <Logo className="h-14 w-auto" />
+        <TiltCard className="rounded-3xl border border-border bg-surface/95 p-7 shadow-[0_40px_80px_-24px_rgba(0,8,40,0.7),0_2px_0_rgba(255,255,255,0.5)_inset] backdrop-blur-sm sm:p-9">
+          <div className="flex flex-col items-center text-center">
+            <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-b from-[color-mix(in_srgb,var(--primary)_70%,white)] to-primary text-primary-foreground shadow-[inset_0_2px_0_rgba(255,255,255,0.55),inset_0_-5px_8px_rgba(0,0,0,0.2),0_10px_18px_-6px_color-mix(in_srgb,var(--primary)_65%,transparent)]">
+              <Lock className="h-5 w-5" />
+            </span>
+            <h1 className="mt-5 text-[1.7rem] font-semibold tracking-tight text-foreground">Welcome back</h1>
           </div>
 
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground">Welcome back</h2>
-          <p className="mt-2 text-sm text-muted">Sign in to continue to the admin panel.</p>
-
-          <div className="mt-8">
+          <div className="mt-7">
             <LoginForm next={safeNextPath(next) ?? "/dashboard"} />
           </div>
+        </TiltCard>
 
-          <p className="mt-8 text-center text-xs text-subtle">
-            Access is limited to authorised administrators.
-          </p>
-        </div>
-      </section>
+        <p className="mt-6 text-center text-xs text-blue-100/80">
+          <ShieldCheck className="mr-1.5 inline h-3.5 w-3.5 -translate-y-px" />
+          Secured session · Access limited to authorised administrators
+        </p>
+      </div>
     </main>
   );
 }

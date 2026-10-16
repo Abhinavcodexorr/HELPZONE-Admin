@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+import { RIPPLE_EVENT } from "@/components/auth/WaterRipples";
+import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, TriangleAlert } from "lucide-react";
 
 const inputClass =
-  "w-full rounded-xl border border-border bg-surface py-3 pl-11 pr-4 text-sm text-foreground outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15";
+  "w-full rounded-2xl border border-border bg-surface-2 py-3 pl-11 pr-4 text-sm text-foreground shadow-[inset_0_2px_4px_rgba(0,0,0,0.06)] outline-none transition focus:border-primary focus:bg-surface focus:ring-4 focus:ring-primary/15";
 
 export function LoginForm({ next }: { next: string }) {
   const [email, setEmail] = useState("");
@@ -12,9 +13,18 @@ export function LoginForm({ next }: { next: string }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // A water wave spreads out from the Sign in button (click or Enter).
+    const button = e.currentTarget.querySelector<HTMLElement>("button[type=submit]");
+    if (button) {
+      const rect = button.getBoundingClientRect();
+      window.dispatchEvent(
+        new CustomEvent(RIPPLE_EVENT, { detail: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } }),
+      );
+    }
     setLoading(true);
     setError(null);
     try {
@@ -38,7 +48,7 @@ export function LoginForm({ next }: { next: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       <div>
         <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-fg-2">
           Email
@@ -74,6 +84,8 @@ export function LoginForm({ next }: { next: string }) {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyUp={(e) => setCapsLock(e.getModifierState("CapsLock"))}
+            onBlur={() => setCapsLock(false)}
             placeholder="Enter your password"
             className={`${inputClass} pr-12`}
           />
@@ -88,6 +100,12 @@ export function LoginForm({ next }: { next: string }) {
         </div>
       </div>
 
+      {capsLock && (
+        <p className="-mt-2 flex animate-fade-in items-center gap-1.5 text-xs font-medium text-warning">
+          <TriangleAlert className="h-3.5 w-3.5" /> Caps Lock is on
+        </p>
+      )}
+
       {error && (
         <div
           role="alert"
@@ -101,7 +119,7 @@ export function LoginForm({ next }: { next: string }) {
       <button
         type="submit"
         disabled={loading || !email || !password}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition duration-150 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+        className="btn-jelly mt-2 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? (
           <>
@@ -109,7 +127,10 @@ export function LoginForm({ next }: { next: string }) {
             Signing in…
           </>
         ) : (
-          "Sign in"
+          <>
+            Sign in
+            <ArrowRight className="h-4 w-4" />
+          </>
         )}
       </button>
     </form>
