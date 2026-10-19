@@ -135,18 +135,6 @@ export function ServiceFormModal({
             />
           </label>
 
-          <div>
-            <span className="mb-1 block text-xs font-medium text-fg-2">Key</span>
-            <p className="rounded-lg bg-surface-2 px-3 py-2 font-mono text-xs text-muted ring-1 ring-border">
-              {key || "cat-…"}
-            </p>
-            <p className="mt-1 text-[11px] text-subtle">
-              {editing || presetKey
-                ? "Providers are linked to this key, so it can't be changed."
-                : "Generated from the name. Providers are linked to it, so it can't be changed later."}
-            </p>
-          </div>
-
           <label className="block">
             <span className="mb-1 flex items-center justify-between text-xs font-medium text-fg-2">
               Description
