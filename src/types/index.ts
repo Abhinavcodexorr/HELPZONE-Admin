@@ -107,7 +107,7 @@ export interface Service {
   key: string;
   name: string;
   description: string;
-  icon: string;
+  icon?: string;
   isActive: boolean;
   providerCount: number;
   approvedProviderCount: number;

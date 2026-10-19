@@ -30,7 +30,7 @@ export function ServiceFormModal({
   const editing = Boolean(service);
   const [name, setName] = useState(service?.name ?? presetName ?? "");
   const [description, setDescription] = useState(service?.description ?? "");
-  const [icon, setIcon] = useState(service?.icon ?? "sparkles");
+  const [icon, setIcon] = useState(service?.icon ?? "");
   const [isActive, setIsActive] = useState(service?.isActive ?? true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +85,7 @@ export function ServiceFormModal({
 
         <div className="flex items-center gap-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary">
-            <ServiceIcon name={icon} className="h-5 w-5" />
+            <ServiceIcon name={icon} label={name} className="h-5 w-5 text-base" />
           </span>
           <div>
             <h3 className="text-base font-semibold text-foreground">{editing ? "Edit service" : "Add service"}</h3>
@@ -139,7 +139,9 @@ export function ServiceFormModal({
           </label>
 
           <div>
-            <span className="mb-2 block text-xs font-medium text-fg-2">Icon</span>
+            <span className="mb-2 block text-xs font-medium text-fg-2">
+              Icon <span className="font-normal text-subtle">(optional · tap again to remove)</span>
+            </span>
             <div className="grid grid-cols-6 gap-1.5" role="radiogroup" aria-label="Icon">
               {serviceIconOptions.map(({ value, label }) => (
                 <button
@@ -149,7 +151,7 @@ export function ServiceFormModal({
                   aria-checked={icon === value}
                   aria-label={label}
                   title={label}
-                  onClick={() => setIcon(value)}
+                  onClick={() => setIcon(icon === value ? "" : value)}
                   className={cn(
                     "flex h-10 items-center justify-center rounded-lg ring-1 transition active:scale-90",
                     icon === value

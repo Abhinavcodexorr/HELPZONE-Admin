@@ -44,7 +44,16 @@ const icons: Record<string, { icon: LucideIcon; label: string }> = {
 
 export const serviceIconOptions = Object.entries(icons).map(([value, { label }]) => ({ value, label }));
 
-export function ServiceIcon({ name, className }: { name: string; className?: string }) {
-  const Icon = (icons[name] ?? icons.sparkles).icon;
+/** The service's icon, or its first letter when no icon was chosen (icons are optional). */
+export function ServiceIcon({ name, label, className }: { name?: string; label?: string; className?: string }) {
+  const entry = name ? icons[name] : undefined;
+  if (!entry) {
+    return (
+      <span aria-hidden className={`flex items-center justify-center font-semibold uppercase leading-none ${className ?? ""}`}>
+        {(label ?? "").trim().charAt(0) || "•"}
+      </span>
+    );
+  }
+  const Icon = entry.icon;
   return <Icon className={className} />;
 }

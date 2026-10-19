@@ -22,9 +22,7 @@ import { KpiCard } from "@/components/dashboard/KpiCard";
 import { NeedsAttention } from "@/components/dashboard/NeedsAttention";
 import { PipelineCard } from "@/components/dashboard/PipelineCard";
 import { ProviderMix } from "@/components/dashboard/ProviderMix";
-import { RecentRegistrations } from "@/components/dashboard/RecentRegistrations";
 import { TopLists } from "@/components/dashboard/TopLists";
-import { TrendCard } from "@/components/dashboard/TrendCard";
 import { useDashboardStats } from "@/components/dashboard/useDashboardStats";
 import { useServices } from "@/components/services/useServices";
 import { Button } from "@/components/ui/Button";
@@ -381,28 +379,18 @@ export default function DashboardPage() {
         </Reveal>
       </div>
 
-      {/* ── trends, recent sign-ups, to-do ── */}
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-5 lg:grid-cols-2 xl:grid-cols-3">
-        <Reveal delay={60} className="lg:col-span-2 xl:col-span-1">
-          <TrendCard daily={metrics.daily} loading={busy} />
-        </Reveal>
-        <Reveal delay={100}>
-          <RecentRegistrations providers={metrics.recent} now={now} loading={loading} />
-        </Reveal>
-        <Reveal delay={140}>
+      {/* ── quality + concentration ── */}
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-5 lg:grid-cols-2">
+        <Reveal delay={20}>
           <NeedsAttention metrics={metrics} loading={busy} />
         </Reveal>
-      </div>
-
-      {/* ── quality + concentration ── */}
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-5 lg:grid-cols-2 xl:grid-cols-3">
         <Reveal delay={60}>
           <DocumentCompleteness metrics={metrics} loading={busy} count={metrics.profileCount} />
         </Reveal>
         <Reveal delay={100}>
           <ProviderMix metrics={metrics} loading={busy} count={metrics.profileCount} />
         </Reveal>
-        <Reveal delay={140} className="lg:col-span-2 xl:col-span-1">
+        <Reveal delay={140}>
           <TopLists metrics={metrics} loading={busy || servicesLoading} />
         </Reveal>
       </div>
