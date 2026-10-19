@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
-import type { Service, ServiceInput } from "@/types";
+import { Plus, X } from "lucide-react";
+import type { Service, ServiceInput, SubCategory } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { keyFromName } from "@/lib/services";
@@ -31,6 +31,8 @@ export function ServiceFormModal({
   const [name, setName] = useState(service?.name ?? presetName ?? "");
   const [description, setDescription] = useState(service?.description ?? "");
   const [icon, setIcon] = useState(service?.icon ?? "");
+  const [subs, setSubs] = useState<SubCategory[]>(service?.subCategories ?? []);
+  const [subDraft, setSubDraft] = useState("");
   const [isActive, setIsActive] = useState(service?.isActive ?? true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,10 +40,33 @@ export function ServiceFormModal({
   const key = service?.key ?? presetKey ?? keyFromName(name);
   const trimmed = name.trim();
   const unchanged =
-    editing && trimmed === service!.name && description.trim() === service!.description && icon === service!.icon;
+    editing &&
+    trimmed === service!.name &&
+    description.trim() === service!.description &&
+    icon === (service!.icon ?? "") &&
+    JSON.stringify(subs.map((s) => [s.name, s.isActive])) ===
+      JSON.stringify((service!.subCategories ?? []).map((s) => [s.name, s.isActive]));
+
+  // Adds one or several (comma-separated) sub-categories typed in the box.
+  function addSubs() {
+    const names = subDraft.split(",").map((n) => n.trim()).filter(Boolean);
+    if (!names.length) return;
+    setSubs((prev) => {
+      const next = [...prev];
+      names.forEach((n) => {
+        if (!next.some((s) => s.name.toLowerCase() === n.toLowerCase())) next.push({ key: "", name: n.slice(0, 60), isActive: true });
+      });
+      return next;
+    });
+    setSubDraft("");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (subDraft.trim()) {
+      setError("Press Add to include the sub-category you typed, or clear it.");
+      return;
+    }
     if (trimmed.length < 2) {
       setError("Enter a service name (at least 2 characters).");
       return;
@@ -57,6 +82,7 @@ export function ServiceFormModal({
         name: trimmed,
         description: description.trim(),
         icon,
+        subCategories: subs.map((s) => ({ ...(s.key && { key: s.key }), name: s.name, isActive: s.isActive })),
         ...(editing ? {} : { isActive, ...(presetKey && { key: presetKey }) }),
       });
       onClose();
@@ -137,6 +163,67 @@ export function ServiceFormModal({
               placeholder="What this service covers"
             />
           </label>
+
+          <div>
+            <span className="mb-1 block text-xs font-medium text-fg-2">
+              Sub-categories <span className="font-normal text-subtle">(optional)</span>
+            </span>
+            <p className="mb-2 text-[11px] text-subtle">
+              Types under this service, e.g. for AC Servicing: Window AC, Split AC. Providers can pick them.
+            </p>
+            {subs.length > 0 && (
+              <ul className="mb-2 flex flex-wrap gap-1.5">
+                {subs.map((s, i) => {
+                  const inUse = (s.providerCount ?? 0) > 0;
+                  return (
+                    <li
+                      key={`${s.key}-${i}`}
+                      className={cn(
+                        "flex items-center gap-1 rounded-full py-1 pl-3 pr-1 text-xs font-medium ring-1",
+                        s.isActive ? "bg-primary-soft text-primary ring-primary/20" : "bg-surface-2 text-subtle line-through ring-border",
+                      )}
+                    >
+                      <button
+                        type="button"
+                        title={s.isActive ? "Click to switch off" : "Click to switch on"}
+                        onClick={() => setSubs((prev) => prev.map((x, n) => (n === i ? { ...x, isActive: !x.isActive } : x)))}
+                      >
+                        {s.name}
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Remove ${s.name}`}
+                        title={inUse ? `${s.providerCount} provider(s) use it — switch it off instead` : "Remove"}
+                        disabled={inUse}
+                        onClick={() => setSubs((prev) => prev.filter((_, n) => n !== i))}
+                        className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-black/10 disabled:cursor-not-allowed disabled:opacity-30"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <div className="flex gap-2">
+              <input
+                className={inputClass}
+                value={subDraft}
+                onChange={(e) => setSubDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addSubs();
+                  }
+                }}
+                placeholder="e.g. Window AC, Split AC"
+                maxLength={120}
+              />
+              <Button type="button" variant="secondary" size="sm" onClick={addSubs} disabled={!subDraft.trim()}>
+                <Plus className="h-3.5 w-3.5" /> Add
+              </Button>
+            </div>
+          </div>
 
           <div>
             <span className="mb-2 block text-xs font-medium text-fg-2">

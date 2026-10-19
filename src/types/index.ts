@@ -112,6 +112,15 @@ export interface UpdateProviderInput {
 
 // A catalog entry managed under Services. Providers reference it by `key`
 // (e.g. "cat-cook") in their categoryIds, so the key never changes after creation.
+/** A second level under a service, e.g. "Window AC" under "AC Servicing". */
+export interface SubCategory {
+  key: string;
+  name: string;
+  isActive: boolean;
+  /** Providers who picked it (admin listing only). */
+  providerCount?: number;
+}
+
 export interface Service {
   id: string;
   key: string;
@@ -119,6 +128,7 @@ export interface Service {
   description: string;
   icon?: string;
   isActive: boolean;
+  subCategories?: SubCategory[];
   providerCount: number;
   approvedProviderCount: number;
   createdAt: string;
@@ -136,6 +146,8 @@ export interface ServiceInput {
   name: string;
   description: string;
   icon: string;
+  /** Full list on every save; entries that exist already must keep their `key`. */
+  subCategories?: { key?: string; name: string; isActive: boolean }[];
   isActive?: boolean;
   /** Only sent when creating from a detected category. */
   key?: string;

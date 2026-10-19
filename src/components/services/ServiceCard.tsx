@@ -43,6 +43,27 @@ export function ServiceCard({
         {service.description || <span className="text-subtle">No description</span>}
       </p>
 
+      {service.subCategories && service.subCategories.length > 0 && (
+        <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Sub-categories">
+          {service.subCategories.slice(0, 4).map((s) => (
+            <li
+              key={s.key}
+              className={cn(
+                "rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1",
+                s.isActive ? "bg-primary-soft text-primary ring-primary/15" : "bg-surface-2 text-subtle line-through ring-border",
+              )}
+            >
+              {s.name}
+            </li>
+          ))}
+          {service.subCategories.length > 4 && (
+            <li className="rounded-full bg-surface-2 px-2.5 py-0.5 text-[11px] font-medium text-muted ring-1 ring-border">
+              +{service.subCategories.length - 4} more
+            </li>
+          )}
+        </ul>
+      )}
+
       <div className="mt-3 flex items-center gap-1.5 text-xs text-muted">
         <Users className="h-3.5 w-3.5" />
         <span className="font-medium text-fg-2">{service.providerCount}</span>
