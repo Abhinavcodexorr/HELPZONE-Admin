@@ -6,7 +6,6 @@ import {
   Check,
   ExternalLink,
   FileText,
-  GraduationCap,
   History,
   IdCard,
   MapPin,
@@ -271,8 +270,6 @@ export function ProviderDetailModal({
             <Row label="Gender" value={p.gender} />
             <Row label="Age" value={p.age ? `${p.age} years` : undefined} />
             <Row label="Nationality" value={p.nationality} />
-            <Row label="Marital Status" value={p.maritalStatus} />
-            <Row label="Religion" value={p.religion} />
             <div className="flex items-start gap-3 py-2.5">
               <span className="min-w-[130px] text-xs font-medium text-muted shrink-0">Languages</span>
               <ChipList items={p.languages} tone="blue" />
@@ -333,11 +330,6 @@ export function ProviderDetailModal({
               <Row label="Reason for Leaving" value={p.lastJob.reasonForLeaving} />
             </InfoCard>
           )}
-
-          {/* ── EDUCATION ── */}
-          <InfoCard icon={GraduationCap} iconBg="bg-info-soft text-info" title="🎓 Education">
-            <Row label="Highest Education" value={p.education} />
-          </InfoCard>
 
           {/* ── IDENTITY DOCUMENTS ── */}
           <InfoCard icon={IdCard} iconBg="bg-danger-soft text-danger" title="🪪 Identity & Documents">
