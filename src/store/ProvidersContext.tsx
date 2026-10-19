@@ -1,11 +1,18 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Provider, UpdateProviderInput } from "@/types";
+import { Provider, ProviderStatus, UpdateProviderInput } from "@/types";
 import { mapToProvider, BackendProvider } from "@/lib/map-provider";
+
+export type StageCounts = Record<ProviderStatus, number>;
 
 interface ProvidersContextValue {
   providers: Provider[];
+  /** Per-stage totals and overall total as the backend counts them (accurate even if the list is capped). */
+  serverCounts: StageCounts | null;
+  serverTotal: number | null;
+  /** When the list was last fetched successfully (ms since epoch). */
+  lastSyncedAt: number | null;
   loading: boolean;
   error: string | null;
   refresh: () => void;
@@ -35,6 +42,21 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewRequest, requestView] = useState<string | null>(null);
+  const [serverCounts, setServerCounts] = useState<StageCounts | null>(null);
+  const [serverTotal, setServerTotal] = useState<number | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+
+  const applyList = useCallback((json: { data?: unknown; counts?: unknown; total?: unknown }) => {
+    setProviders(((json.data as BackendProvider[]) ?? []).map(mapToProvider));
+    const c = json.counts as Partial<StageCounts> | undefined;
+    setServerCounts(
+      c && typeof c === "object"
+        ? { pending: c.pending ?? 0, verification: c.verification ?? 0, approved: c.approved ?? 0, rejected: c.rejected ?? 0 }
+        : null,
+    );
+    setServerTotal(typeof json.total === "number" ? json.total : null);
+    setLastSyncedAt(Date.now());
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -45,24 +67,24 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok || json.success === false) {
         throw new Error(json.message || "Failed to load providers");
       }
-      setProviders(((json.data as BackendProvider[]) ?? []).map(mapToProvider));
+      applyList(json as { data?: unknown; counts?: unknown; total?: unknown });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load providers");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [applyList]);
 
   const sync = useCallback(async () => {
     try {
       const res = await fetch("/api/providers?limit=200", { cache: "no-store" });
       const json = await parseJson(res);
       if (!res.ok || json.success === false) return;
-      setProviders(((json.data as BackendProvider[]) ?? []).map(mapToProvider));
+      applyList(json as { data?: unknown; counts?: unknown; total?: unknown });
     } catch {
       // Keep the current list; the next poll or manual refresh will retry.
     }
-  }, []);
+  }, [applyList]);
 
   useEffect(() => {
     // Deferred via a microtask so the effect body itself never synchronously
@@ -128,8 +150,24 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ providers, loading, error, refresh: load, sync, viewRequest, requestView, verify, approve, reject, update, remove }),
-    [providers, loading, error, load, sync, viewRequest, verify, approve, reject, update, remove]
+    () => ({
+      providers,
+      serverCounts,
+      serverTotal,
+      lastSyncedAt,
+      loading,
+      error,
+      refresh: load,
+      sync,
+      viewRequest,
+      requestView,
+      verify,
+      approve,
+      reject,
+      update,
+      remove,
+    }),
+    [providers, serverCounts, serverTotal, lastSyncedAt, loading, error, load, sync, viewRequest, verify, approve, reject, update, remove]
   );
 
   return <ProvidersContext.Provider value={value}>{children}</ProvidersContext.Provider>;

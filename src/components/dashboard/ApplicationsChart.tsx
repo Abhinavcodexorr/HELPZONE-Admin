@@ -4,12 +4,11 @@ import { useMemo } from "react";
 import { CalendarDays } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { useProviders } from "@/store/ProvidersContext";
-import { weeklyBarGroups } from "@/lib/dashboard-stats";
+import { weeklyBarGroups, type DailyPoint } from "@/lib/dashboard-stats";
+import { CardHeader } from "./CardHeader";
 
-export function ApplicationsChart() {
-  const { providers, loading } = useProviders();
-  const groups = useMemo(() => weeklyBarGroups(providers, new Date()), [providers]);
+export function ApplicationsChart({ daily, loading }: { daily: DailyPoint[]; loading: boolean }) {
+  const groups = useMemo(() => weeklyBarGroups(daily, new Date()), [daily]);
 
   const bars = groups.flatMap((g) => g.bars);
   const max = Math.max(...bars.map((b) => b.value), 1);
@@ -17,23 +16,34 @@ export function ApplicationsChart() {
   let index = 0;
 
   return (
-    <Card className="p-5">
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">Applications</h3>
-          <p className="text-xs text-muted">New provider applications per week</p>
-        </div>
-        <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
-          <CalendarDays className="h-3.5 w-3.5" />
-          Last 3 months
-        </span>
-      </div>
+    <Card className="h-full p-4 sm:p-5">
+      <CardHeader
+        title="Applications"
+        caption="New provider applications per week"
+        hint={{
+          body: (
+            <>
+              <p>
+                One bar per week for the last 13 weeks (weeks start on Monday). Height = providers who signed up that week,
+                counted from each provider&apos;s registration time.
+              </p>
+              <p>Blue bars are at or above the average; the dashed line is the 13-week average. Hover a bar for its count.</p>
+            </>
+          ),
+        }}
+        action={
+          <span className="hidden items-center gap-1.5 whitespace-nowrap rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground sm:inline-flex">
+            <CalendarDays className="h-3.5 w-3.5" />
+            Last 3 months
+          </span>
+        }
+      />
 
       {loading ? (
         <Skeleton className="h-52 w-full rounded-xl" />
       ) : (
         <>
-          <div className="relative h-48">
+          <div className="relative h-44 sm:h-52">
             {average > 0 && (
               <div
                 className="pointer-events-none absolute inset-x-0 z-10 border-t-2 border-dashed border-amber-400/80"
@@ -41,9 +51,9 @@ export function ApplicationsChart() {
                 title={`Average ${average.toFixed(1)} per week`}
               />
             )}
-            <div className="flex h-full items-end gap-4">
+            <div className="flex h-full items-end gap-2 sm:gap-4">
               {groups.map((group) => (
-                <div key={group.month} className="flex h-full items-end gap-1.5" style={{ flex: group.bars.length }}>
+                <div key={group.month} className="flex h-full items-end gap-1 sm:gap-1.5" style={{ flex: group.bars.length }}>
                   {group.bars.map((bar) => {
                     const i = index++;
                     const highlight = bar.value > 0 && bar.value >= average;
@@ -68,7 +78,7 @@ export function ApplicationsChart() {
               ))}
             </div>
           </div>
-          <div className="mt-3 flex gap-4">
+          <div className="mt-3 flex gap-2 sm:gap-4">
             {groups.map((group) => (
               <p
                 key={group.month}

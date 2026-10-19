@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { useProviders } from "@/store/ProvidersContext";
-import { periodSeries, type Period } from "@/lib/dashboard-stats";
+import { periodSeries, type DailyPoint, type Period } from "@/lib/dashboard-stats";
 import type { ProviderStatus } from "@/types";
+import { CardHeader } from "./CardHeader";
 import { LineChart } from "./charts";
 
 type Filter = ProviderStatus | "all";
@@ -30,36 +30,51 @@ const periodCaption: Record<Period, string> = {
   monthly: "last 6 months",
 };
 
-export function TrendCard() {
-  const { providers, loading } = useProviders();
+export function TrendCard({ daily, loading }: { daily: DailyPoint[]; loading: boolean }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [period, setPeriod] = useState<Period>("daily");
 
   const { points, tiles } = useMemo(() => {
     const now = new Date();
-    const sum = (predicate: (p: (typeof providers)[number]) => boolean) =>
-      periodSeries(providers, period, now, predicate).reduce((total, point) => total + point.value, 0);
+    const sum = (statuses: ProviderStatus[] | null) =>
+      periodSeries(daily, period, now, statuses).reduce((total, point) => total + point.value, 0);
     return {
-      points: periodSeries(providers, period, now, (p) => filter === "all" || p.status === filter),
+      points: periodSeries(daily, period, now, filter === "all" ? null : [filter]),
       tiles: [
-        { label: "Received", value: sum(() => true) },
-        { label: "Approved", value: sum((p) => p.status === "approved") },
-        { label: "In review", value: sum((p) => p.status === "pending" || p.status === "verification") },
+        { label: "Received", value: sum(null) },
+        { label: "Approved", value: sum(["approved"]) },
+        { label: "In review", value: sum(["pending", "verification"]) },
       ],
     };
-  }, [providers, filter, period]);
+  }, [daily, filter, period]);
 
   return (
-    <Card className="p-5">
-      <h3 className="text-sm font-semibold text-foreground">Trends</h3>
-      <p className="mb-4 text-xs text-muted">Applications over the {periodCaption[period]}</p>
+    <Card className="h-full p-4 sm:p-5">
+      <CardHeader
+        title="Trends"
+        caption={`Applications over the ${periodCaption[period]}`}
+        hint={{
+          body: (
+            <>
+              <p>
+                The line counts providers by <b>registration date</b> in the chosen window (daily = 14 days, weekly = 8
+                weeks, monthly = 6 months). The tabs filter by the provider&apos;s <b>current</b> stage.
+              </p>
+              <p>
+                <b>Received</b> = all sign-ups in the window, <b>Approved</b> = those now approved, <b>In review</b> = those
+                still in New request or Verification.
+              </p>
+            </>
+          ),
+        }}
+      />
 
-      <div className="flex gap-1 rounded-full bg-surface-3 p-1">
+      <div className="flex gap-1 overflow-x-auto rounded-full bg-surface-3 p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {filters.map((f) => (
           <button
             key={f.value}
             onClick={() => setFilter(f.value)}
-            className={`flex-1 rounded-full px-2 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-95 ${
+            className={`flex-1 shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-95 ${
               filter === f.value ? "bg-primary text-primary-foreground shadow-sm" : "text-muted hover:text-foreground"
             }`}
           >

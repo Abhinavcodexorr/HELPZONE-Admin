@@ -39,8 +39,7 @@ export function ServiceCard({
       </div>
 
       <h3 className={cn("mt-4 text-base font-semibold", active ? "text-foreground" : "text-muted")}>{service.name}</h3>
-      <p className="mt-0.5 w-fit rounded-md bg-surface-3 px-1.5 py-0.5 font-mono text-[11px] text-muted">{service.key}</p>
-      <p className="mt-2.5 line-clamp-2 min-h-[2.5rem] text-sm text-muted">
+      <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm text-muted">
         {service.description || <span className="text-subtle">No description</span>}
       </p>
 

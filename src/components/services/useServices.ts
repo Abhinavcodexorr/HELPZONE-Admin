@@ -45,6 +45,18 @@ export function useServices() {
     queueMicrotask(load);
   }, [load]);
 
+  /** Reloads without the loading skeleton (dashboard auto-refresh). Keeps the last good data on failure. */
+  const sync = useCallback(async () => {
+    try {
+      const body = await call("/api/services");
+      setServices((body.data as Service[]) ?? []);
+      setDetected(body.detected ?? []);
+      setError(null);
+    } catch {
+      // Leave what is on screen; the next tick retries.
+    }
+  }, []);
+
   const replace = (updated: Service) =>
     setServices((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
 
@@ -77,5 +89,5 @@ export function useServices() {
     setServices((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
-  return { services, detected, loading, error, reload: load, create, update, setActive, remove };
+  return { services, detected, loading, error, reload: load, sync, create, update, setActive, remove };
 }
