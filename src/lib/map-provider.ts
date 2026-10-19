@@ -2,7 +2,7 @@ import { LastJob, Provider } from "@/types";
 
 export interface BackendProvider {
   id: string;
-  email: string;
+  email?: string;
   fullName: string;
   gender?: string;
   nationality?: string;
@@ -114,7 +114,7 @@ export function mapToProvider(provider: BackendProvider): Provider {
     state: provider.state || "",
     mobileNumber: provider.mobileNumber || "—",
     whatsappNumber: provider.whatsappNumber || "—",
-    email: provider.email,
+    email: provider.email ?? "",
     age: provider.age,
     maritalStatus: provider.maritalStatus ?? "",
     religion: provider.religion ?? "",

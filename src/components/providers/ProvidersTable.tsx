@@ -103,11 +103,10 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
 
   const filtered = useMemo(() => {
     return providers.filter((p) => {
-      const matchesQuery =
-        p.fullName.toLowerCase().includes(query.toLowerCase()) ||
-        p.email.toLowerCase().includes(query.toLowerCase()) ||
-        p.city.toLowerCase().includes(query.toLowerCase()) ||
-        p.kyc.idNumber.toLowerCase().includes(query.toLowerCase());
+      const q = query.toLowerCase();
+      const matchesQuery = [p.fullName, p.email, p.city, p.mobileNumber, p.kyc.idNumber, ...p.documents.map((d) => d.number)].some(
+        (field) => (field ?? "").toLowerCase().includes(q),
+      );
       const matchesStatus = p.status === status;
       return matchesQuery && matchesStatus;
     });
