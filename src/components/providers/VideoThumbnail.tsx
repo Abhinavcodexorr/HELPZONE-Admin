@@ -27,7 +27,11 @@ export function VideoThumbnail({ provider }: { provider: Provider }) {
         className="group flex items-center gap-2.5 text-left"
       >
         <span className="relative block h-11 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-900 ring-1 ring-border transition-transform duration-200 group-hover:scale-105">
-          {!broken && (
+          {provider.introVideoThumbnailUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- remote S3 thumbnail
+            <img src={provider.introVideoThumbnailUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            !broken && (
             // #t=0.1 asks the browser to render the first frame as a still poster.
             <video
               src={`${src}#t=0.1`}
@@ -37,6 +41,7 @@ export function VideoThumbnail({ provider }: { provider: Provider }) {
               onError={() => setBroken(true)}
               className="h-full w-full object-cover"
             />
+            )
           )}
           <span className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors group-hover:bg-black/45">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow">
@@ -48,7 +53,7 @@ export function VideoThumbnail({ provider }: { provider: Provider }) {
       </button>
 
       {open && (
-        <VideoModal src={src} title={`${provider.fullName} · intro video`} onClose={() => setOpen(false)} />
+        <VideoModal src={src} poster={provider.introVideoThumbnailUrl} title={`${provider.fullName} · intro video`} onClose={() => setOpen(false)} />
       )}
     </>
   );

@@ -6,10 +6,12 @@ import { ExternalLink, VideoOff, X } from "lucide-react";
 
 export function VideoModal({
   src,
+  poster,
   title,
   onClose,
 }: {
   src: string;
+  poster?: string;
   title: string;
   onClose: () => void;
 }) {
@@ -57,6 +59,7 @@ export function VideoModal({
         ) : (
           <video
             src={src}
+            poster={poster || undefined}
             controls
             autoPlay
             playsInline

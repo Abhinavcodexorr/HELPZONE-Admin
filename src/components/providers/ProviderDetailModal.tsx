@@ -10,6 +10,7 @@ import {
   History,
   IdCard,
   MapPin,
+  Play,
   Phone,
   ShieldCheck,
   User,
@@ -28,6 +29,7 @@ import { ShimmerImage } from "@/components/ui/ShimmerImage";
 import { digitsOnly, formatDateTime, formatRupees, isPdf } from "@/lib/utils";
 import { RejectModal } from "./RejectModal";
 import { ImageLightbox } from "./ImageLightbox";
+import { VideoModal } from "./VideoModal";
 
 const statusTone = {
   pending: "amber",
@@ -129,13 +131,12 @@ export function ProviderDetailModal({
   const [lightbox, setLightbox] = useState<{ src: string; alt: string; caption: string } | null>(null);
   const [photoFailed, setPhotoFailed] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
   const p = provider;
 
   const phoneOk = p.mobileNumber !== "—";
   const waDigits = digitsOnly(p.whatsappNumber === "—" ? "" : p.whatsappNumber);
   const waNumber = waDigits.length === 10 ? `91${waDigits}` : waDigits;
-  const idIsPdf = isPdf(p.kyc.idDocumentImage);
-  const panIsPdf = isPdf(p.panCard?.idDocumentImage ?? "");
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -340,112 +341,105 @@ export function ProviderDetailModal({
 
           {/* ── IDENTITY DOCUMENTS ── */}
           <InfoCard icon={IdCard} iconBg="bg-danger-soft text-danger" title="🪪 Identity & Documents">
-            <Row label="ID Type" value={p.kyc.idType} />
-            <Row label="ID Number" value={p.kyc.idNumber} />
-            <Row label="PAN Number" value={p.panCard?.idNumber ?? p.panNumber} />
-
-            {/* ID Document image/pdf */}
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-medium text-muted">📄 ID Document</p>
-              {!p.kyc.idDocumentImage ? (
-                <div className="flex h-24 items-center justify-center rounded-xl border-2 border-dashed border-border text-sm text-subtle">
-                  No document uploaded
-                </div>
-              ) : idIsPdf ? (
-                <a
-                  href={p.kyc.idDocumentImage}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-3 rounded-xl bg-surface-2 p-4 ring-1 ring-border transition hover:ring-primary"
-                >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-danger-soft text-danger">
-                    <FileText className="h-5 w-5" />
-                  </span>
-                  <span className="flex-1 text-sm font-semibold text-foreground">Open ID Document (PDF)</span>
-                  <ExternalLink className="h-4 w-4 text-muted" />
-                </a>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setLightbox({
-                      src: p.kyc.idDocumentImage,
-                      alt: `${p.fullName} ${p.kyc.idType}`,
-                      caption: `${p.kyc.idType} · ${p.kyc.idNumber}`,
-                    })
-                  }
-                  className="group relative block w-full max-w-xs overflow-hidden rounded-xl ring-1 ring-border"
-                >
-                  <ShimmerImage
-                    src={p.kyc.idDocumentImage}
-                    alt={`${p.fullName} ${p.kyc.idType}`}
-                    wrapperClassName="h-44 w-full"
-                    imgClassName="transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/30 group-hover:opacity-100">
-                    <ZoomIn className="h-6 w-6 text-white" />
-                  </span>
-                </button>
-              )}
-            </div>
-
-            {/* PAN Card image/pdf */}
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-medium text-muted">🪪 PAN Card</p>
-              {!p.panCard?.idDocumentImage ? (
-                <div className="flex h-24 items-center justify-center rounded-xl border-2 border-dashed border-border text-sm text-subtle">
-                  No document uploaded
-                </div>
-              ) : panIsPdf ? (
-                <a
-                  href={p.panCard.idDocumentImage}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-3 rounded-xl bg-surface-2 p-4 ring-1 ring-border transition hover:ring-primary"
-                >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-danger-soft text-danger">
-                    <FileText className="h-5 w-5" />
-                  </span>
-                  <span className="flex-1 text-sm font-semibold text-foreground">Open PAN Card (PDF)</span>
-                  <ExternalLink className="h-4 w-4 text-muted" />
-                </a>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setLightbox({
-                      src: p.panCard!.idDocumentImage,
-                      alt: `${p.fullName} PAN Card`,
-                      caption: `PAN Card · ${p.panCard!.idNumber}`,
-                    })
-                  }
-                  className="group relative block w-full max-w-xs overflow-hidden rounded-xl ring-1 ring-border"
-                >
-                  <ShimmerImage
-                    src={p.panCard.idDocumentImage}
-                    alt={`${p.fullName} PAN Card`}
-                    wrapperClassName="h-44 w-full"
-                    imgClassName="transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/30 group-hover:opacity-100">
-                    <ZoomIn className="h-6 w-6 text-white" />
-                  </span>
-                </button>
-              )}
-            </div>
+            {p.documents.length === 0 ? (
+              <div className="flex h-24 items-center justify-center rounded-xl border-2 border-dashed border-border text-sm text-subtle">
+                No identity documents submitted
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {p.documents.map((doc, i) => (
+                  <div key={`${doc.type}-${i}`} className="rounded-xl bg-surface-2 p-3.5 ring-1 ring-border">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary">{doc.type}</span>
+                      <span className="text-[11px] text-subtle">Document {i + 1} of {p.documents.length}</span>
+                    </div>
+                    <div className="mt-2">
+                      <Row label={`${doc.type} Number`} value={doc.number || "—"} />
+                    </div>
+                    <div className="mt-3">
+                      {!doc.image ? (
+                        <div className="flex h-20 items-center justify-center rounded-xl border-2 border-dashed border-border text-sm text-subtle">
+                          No file uploaded
+                        </div>
+                      ) : isPdf(doc.image) ? (
+                        <a
+                          href={doc.image}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-3 rounded-xl bg-surface p-4 ring-1 ring-border transition hover:ring-primary"
+                        >
+                          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-danger-soft text-danger">
+                            <FileText className="h-5 w-5" />
+                          </span>
+                          <span className="flex-1 text-sm font-semibold text-foreground">Open {doc.type} (PDF)</span>
+                          <ExternalLink className="h-4 w-4 text-muted" />
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setLightbox({
+                              src: doc.image,
+                              alt: `${p.fullName} ${doc.type}`,
+                              caption: `${doc.type}${doc.number ? ` · ${doc.number}` : ""}`,
+                            })
+                          }
+                          className="group relative block w-full max-w-xs overflow-hidden rounded-xl ring-1 ring-border"
+                        >
+                          <ShimmerImage
+                            src={doc.image}
+                            alt={`${p.fullName} ${doc.type}`}
+                            wrapperClassName="h-44 w-full"
+                            imgClassName="transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/30 group-hover:opacity-100">
+                            <ZoomIn className="h-6 w-6 text-white" />
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </InfoCard>
 
           {/* ── INTRO VIDEO ── */}
           <InfoCard icon={VideoOff} iconBg="bg-neutral-soft text-neutral" title="🎥 Intro Video">
-            {p.introVideoUrl && !videoFailed ? (
-              <video
-                src={`${p.introVideoUrl}#t=0.1`}
-                controls
-                preload="metadata"
-                playsInline
-                onError={() => setVideoFailed(true)}
-                className="w-full rounded-xl aspect-video bg-black ring-1 ring-border"
-              />
+            {p.introVideoUrl && (p.introVideoThumbnailUrl || !videoFailed) ? (
+              <button
+                type="button"
+                onClick={() => setVideoOpen(true)}
+                aria-label={`Play ${p.fullName}'s intro video`}
+                className="group relative block aspect-video w-full overflow-hidden rounded-xl bg-slate-900 ring-1 ring-border"
+              >
+                {/* #t=0.1 makes the browser render the first frame as the thumbnail. */}
+                {p.introVideoThumbnailUrl ? (
+                  <ShimmerImage
+                    src={p.introVideoThumbnailUrl}
+                    alt={`${p.fullName} intro video thumbnail`}
+                    wrapperClassName="h-full w-full"
+                    imgClassName="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <video
+                    src={`${p.introVideoUrl}#t=0.1`}
+                    preload="metadata"
+                    muted
+                    playsInline
+                    onError={() => setVideoFailed(true)}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                )}
+                <span className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors group-hover:bg-black/45">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition-transform group-hover:scale-110">
+                    <Play className="h-6 w-6 translate-x-0.5 fill-current" />
+                  </span>
+                </span>
+                <span className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white">
+                  Tap to play
+                </span>
+              </button>
             ) : p.introVideoUrl ? (
               <a
                 href={p.introVideoUrl}
@@ -542,6 +536,9 @@ export function ProviderDetailModal({
         />
       )}
 
+      {videoOpen && p.introVideoUrl && (
+        <VideoModal src={p.introVideoUrl} poster={p.introVideoThumbnailUrl} title={`${p.fullName} · intro video`} onClose={() => setVideoOpen(false)} />
+      )}
       {lightbox && (
         <ImageLightbox
           src={lightbox.src}

@@ -31,6 +31,7 @@ export interface BackendProvider {
   emirate?: string;
   panNumber?: string;
   introVideoUrl?: string;
+  introVideoThumbnailUrl?: string;
   profileComplete?: boolean;
   imageUrl?: string;
   kyc?: { idType?: string; idNumber?: string; idDocumentUrl?: string };
@@ -132,6 +133,7 @@ export function mapToProvider(provider: BackendProvider): Provider {
     emirate: provider.emirate ?? "",
     panNumber: provider.panNumber ?? "",
     introVideoUrl: provider.introVideoUrl ?? "",
+    introVideoThumbnailUrl: provider.introVideoThumbnailUrl ?? "",
     profileComplete: provider.profileComplete ?? false,
     isActive: provider.isActive ?? true,
     submittedAt: provider.createdAt,
@@ -145,7 +147,20 @@ export function mapToProvider(provider: BackendProvider): Provider {
       photoImage: provider.imageUrl || "",
     },
     panCard: mapPanCard(provider.kycDocuments),
+    documents: mapDocuments(provider),
   };
+}
+
+// One entry per submitted document, so each type (Aadhaar, PAN card…) is shown on its own.
+function mapDocuments(provider: BackendProvider): Provider["documents"] {
+  const docs = (provider.kycDocuments ?? [])
+    .filter((d) => d.idType || d.idNumber || d.idDocumentUrl)
+    .map((d) => ({ type: d.idType?.trim() || "ID document", number: d.idNumber?.trim() || "", image: d.idDocumentUrl || "" }));
+  // A PAN number can be on the profile without a PAN document row.
+  if (provider.panNumber && !docs.some((d) => /pan/i.test(d.type))) {
+    docs.push({ type: "PAN Card", number: provider.panNumber, image: "" });
+  }
+  return docs;
 }
 
 // Finds the kycDocuments entry (if any) that is a PAN card, by idType.

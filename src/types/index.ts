@@ -65,6 +65,8 @@ export interface Provider {
   emirate: string;
   panNumber: string;
   introVideoUrl: string;
+  /** Still frame of the intro video, made by the backend ("" if not available). */
+  introVideoThumbnailUrl: string;
   profileComplete: boolean;
   isActive: boolean;
   submittedAt: string;
@@ -77,11 +79,19 @@ export interface Provider {
     idDocumentImage: string;
     photoImage: string;
   };
+  /** Every identity document the provider submitted (Aadhaar, PAN card, passport…), each with its own number and file. */
+  documents: ProviderDocument[];
   /** A separate kycDocuments entry whose idType is a PAN card, if the provider submitted one. */
   panCard: {
     idNumber: string;
     idDocumentImage: string;
   } | null;
+}
+
+export interface ProviderDocument {
+  type: string;
+  number: string;
+  image: string;
 }
 
 export interface UpdateProviderInput {
