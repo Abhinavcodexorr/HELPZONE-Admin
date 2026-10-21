@@ -60,6 +60,19 @@ export function formatRupees(amount: number) {
   return `₹${amount.toLocaleString("en-IN")}`;
 }
 
+const AVATAR_COLORS = [
+  "#6366f1", "#06b6d4", "#a855f7", "#22c55e", "#eab308",
+  "#ec4899", "#3b82f6", "#f43f5e", "#14b8a6", "#8b5cf6", "#f97316", "#0ea5e9",
+];
+
+// Deterministic avatar color from an id, so the same provider/user always
+// gets the same color across reloads without storing one.
+export function colorForId(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i += 1) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
 // "ritesh.kumar@x.com" -> "Ritesh Kumar"
 export function displayNameFromEmail(email: string) {
   const local = email.split("@")[0] ?? "";

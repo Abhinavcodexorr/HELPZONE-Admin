@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LayoutDashboard, Users, HardHat, Wrench, Settings, LogOut, Loader2 } from "lucide-react";
+import { LayoutDashboard, Users, HardHat, Wrench, Award, Settings, LogOut, Loader2 } from "lucide-react";
 import { cn, displayNameFromEmail } from "@/lib/utils";
 import { Logo } from "@/components/ui/Logo";
 import { signOut } from "@/lib/auth/client";
@@ -14,6 +14,7 @@ const nav = [
   { href: "/providers", label: "Providers", icon: HardHat },
   { href: "/users", label: "Users", icon: Users },
   { href: "/services", label: "Services", icon: Wrench },
+  { href: "/plans", label: "Plans", icon: Award },
 ];
 
 // Shown next to a collapsed-sidebar icon on hover — same dark pill used for

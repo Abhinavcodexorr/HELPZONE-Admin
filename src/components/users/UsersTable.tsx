@@ -9,20 +9,26 @@ import { formatDate } from "@/lib/utils";
 import { MoreVertical } from "lucide-react";
 import { User, UserStatus } from "@/types";
 
-const statusTone: Record<UserStatus, "green" | "gray" | "red"> = {
+const statusTone: Record<UserStatus, "green" | "gray"> = {
   active: "green",
   inactive: "gray",
-  suspended: "red",
 };
 
 const filters: { label: string; value: UserStatus | "all" }[] = [
   { label: "All", value: "all" },
   { label: "Active", value: "active" },
   { label: "Inactive", value: "inactive" },
-  { label: "Suspended", value: "suspended" },
 ];
 
-export function UsersTable({ users }: { users: User[] }) {
+export function UsersTable({
+  users,
+  busyId,
+  onToggleStatus,
+}: {
+  users: User[];
+  busyId?: string | null;
+  onToggleStatus?: (user: User) => void;
+}) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<UserStatus | "all">("all");
 
@@ -94,9 +100,19 @@ export function UsersTable({ users }: { users: User[] }) {
                   <Badge tone={statusTone[u.status]}>{u.status}</Badge>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <button className="rounded-lg p-1.5 text-subtle hover:bg-surface-3 hover:text-foreground">
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
+                  {onToggleStatus ? (
+                    <button
+                      onClick={() => onToggleStatus(u)}
+                      disabled={busyId === u.id}
+                      className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-subtle hover:bg-surface-3 hover:text-foreground disabled:opacity-50"
+                    >
+                      {busyId === u.id ? "…" : u.status === "active" ? "Deactivate" : "Activate"}
+                    </button>
+                  ) : (
+                    <button className="rounded-lg p-1.5 text-subtle hover:bg-surface-3 hover:text-foreground">
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

@@ -1,4 +1,6 @@
-export type UserStatus = "active" | "inactive" | "suspended";
+// The backend's User model only has `isActive` — no separate "suspended"
+// state exists, so this type doesn't offer one either.
+export type UserStatus = "active" | "inactive";
 
 export interface User {
   id: string;
@@ -151,4 +153,30 @@ export interface ServiceInput {
   isActive?: boolean;
   /** Only sent when creating from a detected category. */
   key?: string;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  durationDays: number;
+  features: string[];
+  isPopular: boolean;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlanInput {
+  name: string;
+  description?: string;
+  price: number;
+  originalPrice?: number;
+  durationDays: number;
+  features: string[];
+  isPopular?: boolean;
+  sortOrder?: number;
 }
