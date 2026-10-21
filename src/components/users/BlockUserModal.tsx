@@ -70,13 +70,13 @@ export function BlockUserModal({
             <Ban className="h-5 w-5" />
           </span>
           <div>
-            <h3 className="text-base font-semibold text-foreground">{many ? `Block ${names.length} users` : "Block user"}</h3>
+            <h3 className="text-base font-semibold text-foreground">{many ? `Block ${names.length} customers` : "Block customer"}</h3>
             <p className="text-sm text-muted">{many ? "These accounts" : names[0]}</p>
           </div>
         </div>
 
         <p className="mt-4 rounded-xl bg-surface-2 px-3.5 py-3 text-xs text-muted ring-1 ring-border">
-          Blocked users can&apos;t sign in or make bookings. Their data stays, and you can unblock them any time.
+          Blocked customers can&apos;t sign in or make bookings. Their data stays, and you can unblock them any time.
         </p>
 
         <p className="mb-2 mt-4 text-xs font-medium text-fg-2">How long</p>
@@ -125,7 +125,7 @@ export function BlockUserModal({
             Cancel
           </Button>
           <Button variant="danger" onClick={confirm} disabled={working || (duration === "custom" && !customDate)}>
-            <Ban className="h-4 w-4" /> {working ? "Blocking…" : many ? `Block ${names.length}` : "Block user"}
+            <Ban className="h-4 w-4" /> {working ? "Blocking…" : many ? `Block ${names.length}` : "Block customer"}
           </Button>
         </div>
       </div>

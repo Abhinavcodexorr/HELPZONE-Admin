@@ -12,7 +12,7 @@ import { providerStages } from "@/lib/provider-stages";
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/providers", label: "Providers", icon: HardHat },
-  { href: "/users", label: "Users", icon: Users },
+  { href: "/customers", label: "Customers", icon: Users },
   { href: "/services", label: "Services", icon: Wrench },
   { href: "/plans", label: "Plans", icon: Award },
 ];

@@ -1,32 +1,26 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Ban, CheckCircle2, Download, Eye } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
-import { FilterGroup, FilterToolbar, Pill, PillRow, SelectField, toggle } from "@/components/ui/filters";
-import { Card } from "@/components/ui/Card";
-import { formatDate } from "@/lib/utils";
-import { Ban, CheckCircle2, Download, Eye, Flag } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { FilterGroup, FilterToolbar, Pill, PillRow, SelectField } from "@/components/ui/filters";
+import { formatDate } from "@/lib/utils";
+import {
+  applyCustomerFilters,
+  customerPresetLabel,
+  customerSorts,
+  datePresets,
+  defaultCustomerFilters,
+  type CustomerFilters,
+} from "@/lib/list-filters";
+import type { User, UserDetail, UserStatus } from "@/types";
 import { BlockUserModal } from "./BlockUserModal";
 import { UserDetailModal } from "./UserDetailModal";
-import { DeleteUserModal, EditUserModal, FlagUserModal } from "./UserActionModals";
-import type { User, UserDetail, UserNote, UserStatus } from "@/types";
-import {
-  applyUserFilters,
-  bookingBuckets,
-  datePresets,
-  defaultUserFilters,
-  userPresetLabel,
-  userSorts,
-  type UserFilters,
-} from "@/lib/list-filters";
 
-const statusTone: Record<UserStatus, "green" | "red"> = {
-  active: "green",
-  inactive: "red",
-};
-
+const statusTone: Record<UserStatus, "green" | "red"> = { active: "green", inactive: "red" };
 const statusLabel: Record<UserStatus, string> = { active: "Active", inactive: "Blocked" };
 
 export function UsersTable({
@@ -34,33 +28,20 @@ export function UsersTable({
   busyIds,
   onBlock,
   onUnblock,
-  onFlag,
-  onUpdate,
-  onDelete,
   loadDetail,
-  addNote,
-  deleteNote,
 }: {
   users: User[];
   busyIds: Set<string>;
   onBlock: (ids: string[], reason: string, until: string | null) => Promise<void>;
   onUnblock: (ids: string[]) => Promise<void>;
-  onFlag: (ids: string[], flagged: boolean, reason: string) => Promise<void>;
-  onUpdate: (id: string, input: { name: string; phone: string; emirate: string; address: string }) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
   loadDetail: (id: string) => Promise<UserDetail>;
-  addNote: (id: string, text: string) => Promise<UserNote[]>;
-  deleteNote: (id: string, noteId: string) => Promise<UserNote[]>;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [blockingIds, setBlockingIds] = useState<string[] | null>(null);
-  const [flaggingIds, setFlaggingIds] = useState<string[] | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState<UserFilters>(defaultUserFilters);
-  const patch = (next: Partial<UserFilters>) => setFilters((f) => ({ ...f, ...next }));
+  const [filters, setFilters] = useState<CustomerFilters>(defaultCustomerFilters);
+  const patch = (next: Partial<CustomerFilters>) => setFilters((f) => ({ ...f, ...next }));
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     queueMicrotask(() => setNow(Date.now()));
@@ -71,9 +52,8 @@ export function UsersTable({
       all: users.length,
       active: users.filter((u) => u.status === "active").length,
       inactive: users.filter((u) => u.status === "inactive").length,
-      flagged: users.filter((u) => u.flagged).length,
+      withPlan: users.filter((u) => u.currentPlan).length,
       cities: [...new Set(users.map((u) => u.city).filter((c) => c && c !== "—"))].sort((a, b) => a.localeCompare(b)),
-      bookings: Object.fromEntries(bookingBuckets.map((b) => [b.value, users.filter((u) => b.test(u.bookings)).length])),
     }),
     [users],
   );
@@ -81,30 +61,20 @@ export function UsersTable({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const matching = q
-      ? users.filter((u) => [u.name, u.email, u.phone, u.city].some((field) => (field ?? "").toLowerCase().includes(q)))
+      ? users.filter((u) => [u.name, u.email, u.phone, u.city, u.currentPlan?.planName].some((field) => (field ?? "").toLowerCase().includes(q)))
       : users;
-    return applyUserFilters(matching, filters, now);
+    return applyCustomerFilters(matching, filters, now);
   }, [users, query, filters, now]);
 
   const chips = [
-    ...(filters.status !== "all"
-      ? [{ key: "status", label: filters.status === "active" ? "Active" : "Blocked", onRemove: () => patch({ status: "all" }) }]
-      : []),
-    ...(filters.flaggedOnly ? [{ key: "flagged", label: "Flagged", onRemove: () => patch({ flaggedOnly: false }) }] : []),
+    ...(filters.status !== "all" ? [{ key: "status", label: filters.status === "active" ? "Active" : "Blocked", onRemove: () => patch({ status: "all" }) }] : []),
+    ...(filters.plan !== "any" ? [{ key: "plan", label: filters.plan === "with" ? "Has a plan" : "No plan", onRemove: () => patch({ plan: "any" }) }] : []),
     ...(filters.city ? [{ key: "city", label: filters.city, onRemove: () => patch({ city: "" }) }] : []),
-    ...filters.bookings.map((b) => ({
-      key: `bookings-${b}`,
-      label: bookingBuckets.find((x) => x.value === b)!.label,
-      onRemove: () => patch({ bookings: filters.bookings.filter((x) => x !== b) }),
-    })),
-    ...(filters.joined !== "any"
-      ? [{ key: "joined", label: `Joined: ${userPresetLabel(filters.joined)}`, onRemove: () => patch({ joined: "any" }) }]
-      : []),
+    ...(filters.joined !== "any" ? [{ key: "joined", label: `Joined: ${customerPresetLabel(filters.joined)}`, onRemove: () => patch({ joined: "any" }) }] : []),
   ];
-  const clearFilters = () => setFilters((f) => ({ ...defaultUserFilters, sort: f.sort }));
+  const clearFilters = () => setFilters((f) => ({ ...defaultCustomerFilters, sort: f.sort }));
   const filtersActive = chips.length > 0 || query.trim() !== "";
 
-  // Selection only ever holds users that still exist.
   const selectedUsers = users.filter((u) => selected.has(u.id));
   const allShownSelected = filtered.length > 0 && filtered.every((u) => selected.has(u.id));
   const toggleOne = (id: string) =>
@@ -119,23 +89,31 @@ export function UsersTable({
   function exportCsv() {
     const cell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
     const rows = [
-      ["Name", "Email", "Phone", "City", "Address", "Bookings", "Joined", "Status", "Blocked until", "Block reason", "Flagged", "Flag reason"],
-      ...filtered.map((u) => [u.name, u.email, u.phone, u.city, u.address, u.bookings, formatDate(u.joinedAt), statusLabel[u.status], u.blockedUntil ? formatDate(u.blockedUntil) : "", u.blockReason, u.flagged ? "Yes" : "", u.flagReason]),
+      ["Name", "Email", "Phone", "City", "Address", "Plan", "Plan expires", "Joined", "Status", "Block reason"],
+      ...filtered.map((u) => [
+        u.name,
+        u.email,
+        u.phone,
+        u.city,
+        u.address,
+        u.currentPlan?.planName ?? "",
+        u.currentPlan ? formatDate(u.currentPlan.expiresAt) : "",
+        formatDate(u.joinedAt),
+        statusLabel[u.status],
+        u.blockReason,
+      ]),
     ];
     const blob = new Blob([rows.map((r) => r.map(cell).join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `users-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `customers-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
   const viewingUser = users.find((u) => u.id === viewingId);
   const blockingUsers = blockingIds ? users.filter((u) => blockingIds.includes(u.id)) : [];
-  const flaggingUsers = flaggingIds ? users.filter((u) => flaggingIds.includes(u.id)) : [];
-  const editingUser = users.find((u) => u.id === editingId);
-  const deletingUser = users.find((u) => u.id === deletingId);
 
   return (
     <Card>
@@ -143,27 +121,29 @@ export function UsersTable({
         <FilterToolbar
           query={query}
           onQuery={setQuery}
-          placeholder="Search name, email, phone, city..."
+          placeholder="Search name, email, phone, plan..."
           sort={filters.sort}
-          sortOptions={userSorts}
+          sortOptions={customerSorts}
           onSort={(sort) => patch({ sort })}
           chips={chips}
           onClear={clearFilters}
-          quick={
-            <>
-              {(["all", "active", "inactive"] as const).map((value) => (
-                <Pill key={value} active={filters.status === value} onClick={() => patch({ status: value })} count={counts[value]}>
-                  {value === "all" ? "All" : value === "active" ? "Active" : "Blocked"}
-                </Pill>
-              ))}
-              <span className="mx-1 h-5 w-px bg-border" aria-hidden />
-              <Pill active={filters.flaggedOnly} onClick={() => patch({ flaggedOnly: !filters.flaggedOnly })} count={counts.flagged}>
-                <Flag className="h-3 w-3" /> Flagged
-              </Pill>
-            </>
-          }
+          quick={(["all", "active", "inactive"] as const).map((value) => (
+            <Pill key={value} active={filters.status === value} onClick={() => patch({ status: value })} count={counts[value]}>
+              {value === "all" ? "All" : value === "active" ? "Active" : "Blocked"}
+            </Pill>
+          ))}
           panel={
             <>
+              <FilterGroup label="Plan">
+                <PillRow>
+                  <Pill active={filters.plan === "with"} onClick={() => patch({ plan: filters.plan === "with" ? "any" : "with" })} count={counts.withPlan}>
+                    Has a plan
+                  </Pill>
+                  <Pill active={filters.plan === "none"} onClick={() => patch({ plan: filters.plan === "none" ? "any" : "none" })} count={counts.all - counts.withPlan}>
+                    No plan
+                  </Pill>
+                </PillRow>
+              </FilterGroup>
               <FilterGroup label="City">
                 <SelectField
                   label="City"
@@ -172,17 +152,8 @@ export function UsersTable({
                   options={[{ value: "", label: "All cities" }, ...counts.cities.map((c) => ({ value: c, label: c }))]}
                 />
               </FilterGroup>
-              <FilterGroup label="Bookings">
-                <PillRow>
-                  {bookingBuckets.map((b) => (
-                    <Pill key={b.value} active={filters.bookings.includes(b.value)} onClick={() => patch({ bookings: toggle(filters.bookings, b.value) })} count={counts.bookings[b.value]}>
-                      {b.label}
-                    </Pill>
-                  ))}
-                </PillRow>
-              </FilterGroup>
               <FilterGroup label="Joined">
-                <SelectField label="Joined" value={filters.joined} onChange={(joined) => patch({ joined: joined as UserFilters["joined"] })} options={datePresets} />
+                <SelectField label="Joined" value={filters.joined} onChange={(joined) => patch({ joined: joined as CustomerFilters["joined"] })} options={datePresets} />
               </FilterGroup>
             </>
           }
@@ -206,9 +177,6 @@ export function UsersTable({
           >
             <CheckCircle2 className="h-3.5 w-3.5" /> Unblock
           </Button>
-          <Button size="sm" variant="secondary" onClick={() => setFlaggingIds(selectedUsers.filter((u) => !u.flagged).map((u) => u.id))} disabled={!selectedUsers.some((u) => !u.flagged)}>
-            <Flag className="h-3.5 w-3.5" /> Flag
-          </Button>
           <button onClick={() => setSelected(new Set())} className="ml-auto text-xs font-semibold text-muted hover:text-foreground">
             Clear selection
           </button>
@@ -220,12 +188,12 @@ export function UsersTable({
           <thead>
             <tr className="border-b border-border bg-surface-2 text-xs uppercase tracking-wide text-subtle">
               <th className="w-10 px-4 py-3">
-                <input type="checkbox" checked={allShownSelected} onChange={toggleAll} aria-label="Select all shown users" className="h-4 w-4 cursor-pointer accent-[var(--primary)]" />
+                <input type="checkbox" checked={allShownSelected} onChange={toggleAll} aria-label="Select all shown customers" className="h-4 w-4 cursor-pointer accent-[var(--primary)]" />
               </th>
-              <th className="px-4 py-3 font-medium">User</th>
+              <th className="px-4 py-3 font-medium">Customer</th>
               <th className="px-4 py-3 font-medium">Phone</th>
               <th className="px-4 py-3 font-medium">City</th>
-              <th className="px-4 py-3 font-medium">Bookings</th>
+              <th className="px-4 py-3 font-medium">Plan</th>
               <th className="px-4 py-3 font-medium">Joined</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 text-right font-medium">Actions</th>
@@ -251,10 +219,7 @@ export function UsersTable({
                     <div className="flex items-center gap-3">
                       <Avatar name={u.name} color={u.avatarColor} />
                       <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 truncate font-medium text-foreground">
-                          {u.name}
-                          {u.flagged && <Flag className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-500" aria-label="Flagged" />}
-                        </p>
+                        <p className="truncate font-medium text-foreground">{u.name}</p>
                         <p className="truncate text-xs text-muted">{u.email}</p>
                       </div>
                     </div>
@@ -262,8 +227,16 @@ export function UsersTable({
                   <td className="whitespace-nowrap px-4 py-3 text-fg-2">{u.phone}</td>
                   <td className="px-4 py-3 text-fg-2">{u.city}</td>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-fg-2">{u.bookings}</p>
-                    <p className="text-xs text-muted">{u.lastBookingAt ? `Last ${formatDate(u.lastBookingAt)}` : "None yet"}</p>
+                    {u.currentPlan ? (
+                      <>
+                        <p className="whitespace-nowrap font-medium text-foreground">{u.currentPlan.planName}</p>
+                        <p className="whitespace-nowrap text-xs text-muted">
+                          Expires {formatDate(u.currentPlan.expiresAt)} · {u.currentPlan.daysLeft}d left
+                        </p>
+                      </>
+                    ) : (
+                      <span className="text-xs text-subtle">No plan</span>
+                    )}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-muted">{formatDate(u.joinedAt)}</td>
                   <td className="px-4 py-3">
@@ -281,14 +254,6 @@ export function UsersTable({
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => setViewingId(u.id)} aria-label={`View ${u.name}`} title="View details" className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-surface-3 hover:text-foreground active:scale-90">
                         <Eye className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => (u.flagged ? onFlag([u.id], false, "") : setFlaggingIds([u.id]))}
-                        aria-label={u.flagged ? `Remove flag from ${u.name}` : `Flag ${u.name}`}
-                        title={u.flagged ? "Remove flag" : "Flag for attention"}
-                        className={`flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-surface-3 active:scale-90 ${u.flagged ? "text-amber-500" : "text-muted hover:text-foreground"}`}
-                      >
-                        <Flag className={`h-4 w-4 ${u.flagged ? "fill-amber-400" : ""}`} />
                       </button>
                       {blocked ? (
                         <Button size="sm" variant="secondary" disabled={busy} onClick={() => onUnblock([u.id])}>
@@ -308,7 +273,7 @@ export function UsersTable({
               <tr>
                 <td colSpan={8} className="px-4 py-10 text-center text-sm text-subtle">
                   <span className="flex flex-col items-center gap-2">
-                    No users match your filters.
+                    No customers match your filters.
                     {filtersActive && (
                       <button
                         type="button"
@@ -331,7 +296,7 @@ export function UsersTable({
 
       <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted">
         <span>
-          Showing {filtered.length} of {users.length} users
+          Showing {filtered.length} of {users.length} customers
         </span>
         <button onClick={exportCsv} disabled={filtered.length === 0} className="flex items-center gap-1.5 font-semibold text-fg-2 hover:text-primary disabled:opacity-50">
           <Download className="h-3.5 w-3.5" /> Export CSV
@@ -346,12 +311,6 @@ export function UsersTable({
           onClose={() => setViewingId(null)}
           onBlock={() => setBlockingIds([viewingUser.id])}
           onUnblock={() => onUnblock([viewingUser.id])}
-          onFlag={() => setFlaggingIds([viewingUser.id])}
-          onUnflag={() => onFlag([viewingUser.id], false, "")}
-          onEdit={() => setEditingId(viewingUser.id)}
-          onDelete={() => setDeletingId(viewingUser.id)}
-          addNote={addNote}
-          deleteNote={deleteNote}
         />
       )}
 
@@ -363,41 +322,6 @@ export function UsersTable({
             await onBlock(blockingIds, reason, until);
             setBlockingIds(null);
             setSelected(new Set());
-          }}
-        />
-      )}
-
-      {flaggingIds && flaggingUsers.length > 0 && (
-        <FlagUserModal
-          names={flaggingUsers.map((u) => u.name)}
-          onCancel={() => setFlaggingIds(null)}
-          onConfirm={async (reason) => {
-            await onFlag(flaggingIds, true, reason);
-            setFlaggingIds(null);
-            setSelected(new Set());
-          }}
-        />
-      )}
-
-      {editingUser && (
-        <EditUserModal
-          user={editingUser}
-          onCancel={() => setEditingId(null)}
-          onSave={async (input) => {
-            await onUpdate(editingUser.id, input);
-            setEditingId(null);
-          }}
-        />
-      )}
-
-      {deletingUser && (
-        <DeleteUserModal
-          user={deletingUser}
-          onCancel={() => setDeletingId(null)}
-          onConfirm={async () => {
-            await onDelete(deletingUser.id);
-            setDeletingId(null);
-            setViewingId(null);
           }}
         />
       )}

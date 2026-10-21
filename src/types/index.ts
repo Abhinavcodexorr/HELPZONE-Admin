@@ -10,8 +10,6 @@ export interface User {
   avatarColor: string;
   city: string;
   address: string;
-  bookings: number;
-  lastBookingAt: string | null;
   joinedAt: string;
   /** "inactive" is a blocked account (it can't sign in or book). */
   status: UserStatus;
@@ -19,42 +17,28 @@ export interface User {
   blockReason: string;
   /** A timed block ends by itself at this moment; null = until an admin unblocks. */
   blockedUntil: string | null;
-  /** On the watch list (flagged for attention, not blocked). */
-  flagged: boolean;
-  flagReason: string;
-  noteCount: number;
+  /** The plan they are on right now; null = none. */
+  currentPlan: Subscription | null;
 }
 
-export interface UserNote {
-  _id: string;
-  text: string;
-  at: string;
-}
-
-export type ModerationAction = "blocked" | "unblocked" | "auto_unblocked" | "flagged" | "unflagged" | "edited";
-
-export interface ModerationEntry {
-  action: ModerationAction;
-  reason?: string;
-  until?: string;
-  at: string;
-}
-
-export interface UserBooking {
+/** A plan a customer bought (name, price and length are as they were at purchase). */
+export interface Subscription {
   id: string;
-  status: string;
-  scheduledDate: string;
-  providerName: string | null;
-  providerCity: string | null;
-  monthlySalary: number;
+  planName: string;
+  price: number;
+  originalPrice: number | null;
+  durationDays: number;
+  startsAt: string;
+  expiresAt: string;
+  status: "active" | "upcoming" | "expired" | "cancelled";
+  daysLeft: number;
+  paymentRef: string | null;
+  source: "app" | "admin";
+  boughtAt: string;
 }
 
 export interface UserDetail extends User {
-  bookingStats: Record<string, number> & { total: number };
-  recentBookings: UserBooking[];
-  adminNotes: UserNote[];
-  /** Newest first. */
-  moderationLog: ModerationEntry[];
+  subscription: { current: Subscription | null; upcoming: Subscription | null; history: Subscription[] };
 }
 
 // The real backend stores categoryId/idType as free text (no fixed enum
@@ -122,6 +106,8 @@ export interface Provider {
     idType: IdType;
     idNumber: string;
     idDocumentImage: string;
+    /** Back side, when the ID has one (Aadhaar). */
+    idDocumentBackImage?: string;
     photoImage: string;
   };
   /** Every identity document the provider submitted (Aadhaar, PAN card, passport…), each with its own number and file. */

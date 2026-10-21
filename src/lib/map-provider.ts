@@ -90,6 +90,7 @@ function mapLastJob(job?: Partial<LastJob>): LastJob | undefined {
 }
 
 export function mapToProvider(provider: BackendProvider): Provider {
+  const documents = mapDocuments(provider);
   const categoryIds = provider.categoryIds?.length
     ? provider.categoryIds
     : provider.categoryId
@@ -135,14 +136,24 @@ export function mapToProvider(provider: BackendProvider): Provider {
     updatedAt: provider.updatedAt ?? provider.createdAt,
     status: provider.applicationStatus,
     rejectionReason: provider.rejectionReason,
-    kyc: {
-      idType: provider.kyc?.idType || "—",
-      idNumber: provider.kyc?.idNumber || "—",
-      idDocumentImage: provider.kyc?.idDocumentUrl || "",
-      photoImage: provider.imageUrl || "",
-    },
+    kyc: mapKyc(provider, documents),
     panCard: mapPanCard(provider),
-    documents: mapDocuments(provider),
+    documents,
+  };
+}
+
+// The primary ID proof shown in the listing's Aadhaar column: the first non-PAN document
+// (the Aadhaar front in the new flow, the first kycDocuments entry in older records).
+function mapKyc(provider: BackendProvider, documents: Provider["documents"]): Provider["kyc"] {
+  const primary = documents.find((d) => !/pan/i.test(d.type));
+  const isAadhaar = primary ? /aadhaar/i.test(primary.type) : false;
+  const back = isAadhaar ? documents.find((d) => /aadhaar.*back/i.test(d.type)) : undefined;
+  return {
+    idType: primary ? (isAadhaar ? "Aadhaar Card" : primary.type) : "—",
+    idNumber: primary?.number || "—",
+    idDocumentImage: primary?.image || "",
+    idDocumentBackImage: back?.image || "",
+    photoImage: provider.imageUrl || "",
   };
 }
 

@@ -2,7 +2,7 @@ import type { User } from "@/types";
 
 const DAY = 86_400_000;
 
-/** Registration/joined date presets shared by the Providers and Users filters. */
+/** Registration/joined date presets shared by the Providers and Customers filters. */
 export type DatePreset = "any" | "today" | "7d" | "30d" | "older30";
 
 export const datePresets: { value: DatePreset; label: string }[] = [
@@ -100,49 +100,46 @@ export function describeProviderFilters(
   return chips;
 }
 
-/* ───────────── users ───────────── */
+/* ───────────── customers ───────────── */
 
-export type BookingBucket = "none" | "1-4" | "5+";
-export const bookingBuckets: { value: BookingBucket; label: string; test: (n: number) => boolean }[] = [
-  { value: "none", label: "No bookings", test: (n) => n === 0 },
-  { value: "1-4", label: "1–4 bookings", test: (n) => n >= 1 && n <= 4 },
-  { value: "5+", label: "5+ bookings", test: (n) => n >= 5 },
-];
-
-export type UserSort = "newest" | "oldest" | "name" | "bookings";
-export const userSorts: { value: UserSort; label: string }[] = [
+export type CustomerSort = "newest" | "oldest" | "name" | "plan";
+export const customerSorts: { value: CustomerSort; label: string }[] = [
   { value: "newest", label: "Newest first" },
   { value: "oldest", label: "Oldest first" },
   { value: "name", label: "Name A–Z" },
-  { value: "bookings", label: "Most bookings" },
+  { value: "plan", label: "Plan ending soonest" },
 ];
 
-export interface UserFilters {
+export interface CustomerFilters {
   status: "all" | "active" | "inactive";
+  plan: "any" | "with" | "none";
   city: string;
-  bookings: BookingBucket[];
   joined: DatePreset;
-  flaggedOnly: boolean;
-  sort: UserSort;
+  sort: CustomerSort;
 }
 
-export const defaultUserFilters: UserFilters = { status: "all", city: "", bookings: [], joined: "any", flaggedOnly: false, sort: "newest" };
+export const defaultCustomerFilters: CustomerFilters = { status: "all", plan: "any", city: "", joined: "any", sort: "newest" };
 
-export function applyUserFilters(users: User[], f: UserFilters, now: number): User[] {
+export function applyCustomerFilters(users: User[], f: CustomerFilters, now: number): User[] {
   const out = users.filter((u) => {
     if (f.status !== "all" && u.status !== f.status) return false;
+    if (f.plan === "with" && !u.currentPlan) return false;
+    if (f.plan === "none" && u.currentPlan) return false;
     if (f.city && u.city !== f.city) return false;
-    if (f.flaggedOnly && !u.flagged) return false;
-    if (f.bookings.length && !bookingBuckets.some((b) => f.bookings.includes(b.value) && b.test(u.bookings))) return false;
     return inDatePreset(u.joinedAt, f.joined, now);
   });
   const byDate = (a: User, b: User) => new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime();
   return out.sort((a, b) => {
     if (f.sort === "oldest") return byDate(a, b);
     if (f.sort === "name") return a.name.localeCompare(b.name);
-    if (f.sort === "bookings") return b.bookings - a.bookings || byDate(b, a);
+    if (f.sort === "plan") {
+      // Plans ending soonest first; customers without a plan last.
+      const ea = a.currentPlan ? new Date(a.currentPlan.expiresAt).getTime() : Infinity;
+      const eb = b.currentPlan ? new Date(b.currentPlan.expiresAt).getTime() : Infinity;
+      return ea - eb || byDate(b, a);
+    }
     return byDate(b, a);
   });
 }
 
-export const userPresetLabel = presetLabel;
+export const customerPresetLabel = presetLabel;
