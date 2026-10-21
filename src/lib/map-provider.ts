@@ -4,7 +4,7 @@ import { colorForId } from "@/lib/utils";
 export interface BackendProvider {
   id: string;
   email?: string;
-  fullName: string;
+  fullName?: string;
   gender?: string;
   nationality?: string;
   // Older records only have the single `categoryId`; newer ones use the array.
@@ -94,7 +94,8 @@ export function mapToProvider(provider: BackendProvider): Provider {
 
   return {
     id: provider.id,
-    fullName: provider.fullName,
+    // Phone-only signups have no name until they finish their profile.
+    fullName: provider.fullName?.trim() || "Unnamed provider",
     gender: provider.gender === "Male" ? "Male" : "Female",
     nationality: provider.nationality || "—",
     avatarColor: colorForId(provider.id),

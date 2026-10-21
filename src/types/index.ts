@@ -9,9 +9,52 @@ export interface User {
   phone: string;
   avatarColor: string;
   city: string;
+  address: string;
   bookings: number;
+  lastBookingAt: string | null;
   joinedAt: string;
+  /** "inactive" is a blocked account (it can't sign in or book). */
   status: UserStatus;
+  blockedAt: string | null;
+  blockReason: string;
+  /** A timed block ends by itself at this moment; null = until an admin unblocks. */
+  blockedUntil: string | null;
+  /** On the watch list (flagged for attention, not blocked). */
+  flagged: boolean;
+  flagReason: string;
+  noteCount: number;
+}
+
+export interface UserNote {
+  _id: string;
+  text: string;
+  at: string;
+}
+
+export type ModerationAction = "blocked" | "unblocked" | "auto_unblocked" | "flagged" | "unflagged" | "edited";
+
+export interface ModerationEntry {
+  action: ModerationAction;
+  reason?: string;
+  until?: string;
+  at: string;
+}
+
+export interface UserBooking {
+  id: string;
+  status: string;
+  scheduledDate: string;
+  providerName: string | null;
+  providerCity: string | null;
+  monthlySalary: number;
+}
+
+export interface UserDetail extends User {
+  bookingStats: Record<string, number> & { total: number };
+  recentBookings: UserBooking[];
+  adminNotes: UserNote[];
+  /** Newest first. */
+  moderationLog: ModerationEntry[];
 }
 
 // The real backend stores categoryId/idType as free text (no fixed enum

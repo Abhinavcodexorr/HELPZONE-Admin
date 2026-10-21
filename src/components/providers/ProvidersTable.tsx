@@ -2,12 +2,23 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
-import { SearchInput } from "@/components/ui/SearchInput";
+import { FilterGroup, FilterToolbar, Pill, PillRow, SelectField, toggle } from "@/components/ui/filters";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
 import { formatDate, formatTime } from "@/lib/utils";
 import { Phone } from "lucide-react";
 import { providerStages } from "@/lib/provider-stages";
+import { labelForCategory } from "@/lib/map-provider";
+import {
+  applyProviderFilters,
+  datePresets,
+  defaultProviderFilters,
+  describeProviderFilters,
+  experienceBuckets,
+  providerHas,
+  providerSorts,
+  type ProviderFilters,
+} from "@/lib/list-filters";
 import { ProviderStatus } from "@/types";
 import { useProviders } from "@/store/ProvidersContext";
 import { DocumentThumbnail } from "./DocumentThumbnail";
@@ -101,16 +112,53 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
     [providers]
   );
 
-  const filtered = useMemo(() => {
-    return providers.filter((p) => {
-      const q = query.toLowerCase();
-      const matchesQuery = [p.fullName, p.email, p.city, p.mobileNumber, p.kyc.idNumber, ...p.documents.map((d) => d.number)].some(
-        (field) => (field ?? "").toLowerCase().includes(q),
-      );
-      const matchesStatus = p.status === status;
-      return matchesQuery && matchesStatus;
+  const [filters, setFilters] = useState<ProviderFilters>(defaultProviderFilters);
+  const patch = (next: Partial<ProviderFilters>) => setFilters((f) => ({ ...f, ...next }));
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    queueMicrotask(() => setNow(Date.now()));
+  }, [providers, filters.applied]);
+
+  // Everything in this stage, before search/filters: the pool the filter options and counts come from.
+  const stageProviders = useMemo(() => providers.filter((p) => p.status === status), [providers, status]);
+
+  const options = useMemo(() => {
+    const services = new Map<string, number>();
+    const cities = new Map<string, number>();
+    stageProviders.forEach((p) => {
+      p.categoryIds.forEach((id) => services.set(id, (services.get(id) ?? 0) + 1));
+      if (p.city && p.city !== "—") cities.set(p.city, (cities.get(p.city) ?? 0) + 1);
     });
-  }, [providers, query, status]);
+    return {
+      services: [...services.entries()].sort((x, y) => y[1] - x[1]),
+      cities: [...cities.keys()].sort((x, y) => x.localeCompare(y)),
+      has: Object.fromEntries(providerHas.map((h) => [h.value, stageProviders.filter(h.test).length])),
+      gender: {
+        Male: stageProviders.filter((p) => p.gender === "Male").length,
+        Female: stageProviders.filter((p) => p.gender === "Female").length,
+      },
+    };
+  }, [stageProviders]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const matching = q
+      ? stageProviders.filter((p) =>
+          [p.fullName, p.email, p.city, p.mobileNumber, p.kyc.idNumber, ...p.documents.map((d) => d.number)].some((field) =>
+            (field ?? "").toLowerCase().includes(q),
+          ),
+        )
+      : stageProviders;
+    return applyProviderFilters(matching, filters, now);
+  }, [stageProviders, query, filters, now]);
+
+  const chips = describeProviderFilters(filters, labelForCategory).map((c) => ({
+    key: c.key,
+    label: c.label,
+    onRemove: () => setFilters((f) => ({ ...f, ...(typeof c.clear === "function" ? c.clear(f) : c.clear) })),
+  }));
+  const clearFilters = () => setFilters((f) => ({ ...defaultProviderFilters, sort: f.sort }));
+  const filtersActive = chips.length > 0 || query.trim() !== "";
 
   const viewingProvider = providers.find((p) => p.id === viewingId);
   const rejectingProvider = providers.find((p) => p.id === rejectingId);
@@ -130,12 +178,78 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
               <p className="text-xs text-muted">{loading ? "Loading…" : `${counts[status]} ${counts[status] === 1 ? "provider" : "providers"}`}</p>
             </div>
           </div>
-          <SearchInput
-            value={query}
-            onChange={setQuery}
-            placeholder="Search name, email, city, ID number..."
-          />
         </div>
+
+        <FilterToolbar
+          query={query}
+          onQuery={setQuery}
+          placeholder="Search name, phone, city, ID number..."
+          sort={filters.sort}
+          sortOptions={providerSorts}
+          onSort={(sort) => patch({ sort })}
+          chips={chips}
+          onClear={clearFilters}
+          quick={providerHas
+            .filter((h) => h.value !== "photo")
+            .map((h) => (
+              <Pill key={h.value} active={filters.has.includes(h.value)} onClick={() => patch({ has: toggle(filters.has, h.value) })} count={options.has[h.value]}>
+                {h.label}
+              </Pill>
+            ))}
+          panel={
+            <>
+              <FilterGroup label="Service">
+                {options.services.length === 0 ? (
+                  <p className="text-xs text-subtle">No services on these providers yet.</p>
+                ) : (
+                  <PillRow>
+                    {options.services.map(([key, count]) => (
+                      <Pill key={key} active={filters.services.includes(key)} onClick={() => patch({ services: toggle(filters.services, key) })} count={count}>
+                        {labelForCategory(key)}
+                      </Pill>
+                    ))}
+                  </PillRow>
+                )}
+              </FilterGroup>
+              <FilterGroup label="City">
+                <SelectField
+                  label="City"
+                  value={filters.city}
+                  onChange={(city) => patch({ city })}
+                  options={[{ value: "", label: "All cities" }, ...options.cities.map((c) => ({ value: c, label: c }))]}
+                />
+              </FilterGroup>
+              <FilterGroup label="Gender">
+                <PillRow>
+                  {(["Male", "Female"] as const).map((g) => (
+                    <Pill key={g} active={filters.gender === g} onClick={() => patch({ gender: filters.gender === g ? "any" : g })} count={options.gender[g]}>
+                      {g}
+                    </Pill>
+                  ))}
+                </PillRow>
+              </FilterGroup>
+              <FilterGroup label="Experience">
+                <PillRow>
+                  {experienceBuckets.map((b) => (
+                    <Pill key={b.value} active={filters.experience.includes(b.value)} onClick={() => patch({ experience: toggle(filters.experience, b.value) })}>
+                      {b.label}
+                    </Pill>
+                  ))}
+                </PillRow>
+              </FilterGroup>
+              <FilterGroup label="Applied">
+                <SelectField label="Applied" value={filters.applied} onChange={(applied) => patch({ applied: applied as ProviderFilters["applied"] })} options={datePresets} />
+              </FilterGroup>
+              <FilterGroup label="Profile photo">
+                <PillRow>
+                  <Pill active={filters.has.includes("photo")} onClick={() => patch({ has: toggle(filters.has, "photo") })} count={options.has.photo}>
+                    Has photo
+                  </Pill>
+                </PillRow>
+              </FilterGroup>
+            </>
+          }
+        />
       </div>
 
       {actionError && (
@@ -299,11 +413,25 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
             {!loading && filtered.length === 0 && (
               <tr>
                 <td colSpan={11} className="px-4 py-12 text-center text-sm text-subtle">
-                  {providers.length === 0
-                    ? "No provider applications yet."
-                    : query
-                      ? "No providers match your search."
-                      : `No providers in ${stage.label}.`}
+                  {providers.length === 0 ? (
+                    "No provider applications yet."
+                  ) : filtersActive && stageProviders.length > 0 ? (
+                    <span className="flex flex-col items-center gap-2">
+                      No providers match these filters.
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuery("");
+                          clearFilters();
+                        }}
+                        className="font-semibold text-primary hover:underline"
+                      >
+                        Clear search and filters
+                      </button>
+                    </span>
+                  ) : (
+                    `No providers in ${stage.label}.`
+                  )}
                 </td>
               </tr>
             )}

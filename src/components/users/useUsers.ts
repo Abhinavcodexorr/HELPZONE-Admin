@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { User } from "@/types";
-import { mapToUser, type BackendCustomer } from "@/lib/map-customer";
+import type { User, UserDetail, UserNote } from "@/types";
+import { mapToUser, mapToUserDetail, type BackendCustomer, type BackendCustomerDetail } from "@/lib/map-customer";
 
-type ApiBody = { success?: boolean; message?: string; data?: BackendCustomer[] };
+type ApiBody = { success?: boolean; message?: string; data?: BackendCustomer[] | BackendCustomer | BackendCustomerDetail };
 
 async function call(url: string, init?: RequestInit): Promise<ApiBody> {
   const res = await fetch(url, { cache: "no-store", ...init });
@@ -26,7 +26,7 @@ export function useUsers() {
     setError(null);
     try {
       const body = await call("/api/users");
-      setUsers((body.data ?? []).map(mapToUser));
+      setUsers(((body.data as BackendCustomer[]) ?? []).map(mapToUser));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load users");
     } finally {
@@ -38,14 +38,76 @@ export function useUsers() {
     queueMicrotask(load);
   }, [load]);
 
-  const setActive = useCallback(async (id: string, isActive: boolean) => {
-    // The activate/deactivate endpoint doesn't recompute the booking count
-    // (it returns a fresh serialization with bookingCount reset to 0), so
-    // only the status/color/etc change here — the known booking count is
-    // kept from what's already on screen rather than overwritten with 0.
-    await call(`/api/users/${id}/${isActive ? "activate" : "deactivate"}`, { method: "PATCH" });
-    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, status: isActive ? "active" : "inactive" } : u)));
+  const patchUser = (id: string, patch: Partial<User>) => setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)));
+
+  // Blocking keeps the booking count already on screen (the endpoint doesn't recompute it).
+  // `until` (ISO) makes it a timed block that ends by itself; null = until unblocked.
+  const block = useCallback(async (id: string, reason: string, until: string | null) => {
+    const body = await call(`/api/users/${id}/deactivate`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason, ...(until && { until }) }),
+    });
+    const saved = body.data as BackendCustomer | undefined;
+    patchUser(id, {
+      status: "inactive",
+      blockReason: saved?.blockReason ?? reason,
+      blockedAt: saved?.blockedAt ?? new Date().toISOString(),
+      blockedUntil: saved?.blockedUntil ?? until,
+    });
   }, []);
 
-  return { users, loading, error, reload: load, setActive };
+  const unblock = useCallback(async (id: string) => {
+    await call(`/api/users/${id}/activate`, { method: "PATCH" });
+    patchUser(id, { status: "active", blockReason: "", blockedAt: null, blockedUntil: null });
+  }, []);
+
+  const flag = useCallback(async (id: string, flagged: boolean, reason = "") => {
+    await call(`/api/users/${id}/flag`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ flagged, reason }),
+    });
+    patchUser(id, { flagged, flagReason: flagged ? reason : "" });
+  }, []);
+
+  const addNote = useCallback(async (id: string, text: string): Promise<UserNote[]> => {
+    const body = await call(`/api/users/${id}/notes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    const notes = body.data as unknown as UserNote[];
+    patchUser(id, { noteCount: notes.length });
+    return notes;
+  }, []);
+
+  const deleteNote = useCallback(async (id: string, noteId: string): Promise<UserNote[]> => {
+    const body = await call(`/api/users/${id}/notes/${noteId}`, { method: "DELETE" });
+    const notes = body.data as unknown as UserNote[];
+    patchUser(id, { noteCount: notes.length });
+    return notes;
+  }, []);
+
+  const update = useCallback(async (id: string, input: { name: string; phone: string; emirate: string; address: string }) => {
+    const body = await call(`/api/users/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const saved = mapToUser(body.data as BackendCustomer);
+    patchUser(id, { name: saved.name, phone: saved.phone, city: saved.city, address: saved.address });
+  }, []);
+
+  const remove = useCallback(async (id: string) => {
+    await call(`/api/users/${id}`, { method: "DELETE" });
+    setUsers((prev) => prev.filter((u) => u.id !== id));
+  }, []);
+
+  const loadDetail = useCallback(async (id: string): Promise<UserDetail> => {
+    const body = await call(`/api/users/${id}`);
+    return mapToUserDetail(body.data as unknown as BackendCustomerDetail);
+  }, []);
+
+  return { users, loading, error, reload: load, block, unblock, flag, addNote, deleteNote, update, remove, loadDetail };
 }
