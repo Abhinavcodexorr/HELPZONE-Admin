@@ -1,24 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { FilterGroup, FilterToolbar, Pill, PillRow, SelectField, toggle } from "@/components/ui/filters";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Card } from "@/components/ui/Card";
 import { formatDate, formatTime } from "@/lib/utils";
-import { Phone } from "lucide-react";
+import { ChevronLeft, ChevronRight, Phone } from "lucide-react";
 import { providerStages } from "@/lib/provider-stages";
 import { labelForCategory } from "@/lib/map-provider";
 import {
-  applyProviderFilters,
   datePresets,
   defaultProviderFilters,
   describeProviderFilters,
   experienceBuckets,
-  providerHas,
   providerSorts,
   type ProviderFilters,
 } from "@/lib/list-filters";
+import { PAGE_SIZE, useProviderList } from "./useProviderList";
 import { ProviderStatus } from "@/types";
 import { useProviders } from "@/store/ProvidersContext";
 import { DocumentThumbnail } from "./DocumentThumbnail";
@@ -53,21 +52,23 @@ const statusLabel: Record<ProviderStatus, string> = {
 };
 
 export function ProvidersTable({ status }: { status: ProviderStatus }) {
-  const { providers, loading, error, refresh, viewRequest, requestView, verify, approve, reject, update, remove } = useProviders();
+  // The context list feeds the dashboard and notifications, and the actions below; this table's own rows
+  // come from the API for exactly the chosen filters (see useProviderList).
+  const { providers: allProviders, lastSyncedAt, viewRequest, requestView, verify, approve, reject, update, remove } = useProviders();
   const stage = providerStages.find((t) => t.status === status) ?? providerStages[0];
-  // Each stage page mounts its own table, so opening a stage reloads the list
-  // from the API and every stage shows current data. On a hard page load the
-  // provider is still doing its first fetch (loading), so nothing extra is
-  // requested; the ref also stops Strict Mode's double effect from fetching twice.
-  const dataWasLoaded = useRef(!loading);
-  const refreshed = useRef(false);
-  useEffect(() => {
-    if (!dataWasLoaded.current || refreshed.current) return;
-    refreshed.current = true;
-    queueMicrotask(refresh);
-  }, [refresh]);
 
   const [query, setQuery] = useState("");
+  const [filters, setFilters] = useState<ProviderFilters>(defaultProviderFilters);
+  const patch = (next: Partial<ProviderFilters>) => setFilters((f) => ({ ...f, ...next }));
+  const list = useProviderList(status, query, filters);
+  const { providers, loading, fetching, error, total, pages, page, setPage, counts, facets, refresh } = list;
+
+  // New registrations / changes picked up by the notification poll: reload this list too.
+  useEffect(() => {
+    if (lastSyncedAt) queueMicrotask(refresh);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastSyncedAt]);
+
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -75,21 +76,24 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  // A notification asked for this provider's details: open the popup once the
-  // list contains it (the list may still be reloading), then clear the request.
+  // Modals look a provider up in this page of results first, then in the app-wide list.
+  const byId = useMemo(() => new Map([...allProviders, ...providers].map((p) => [p.id, p])), [allProviders, providers]);
+
+  // A notification asked for this provider's details: open the popup once it is known, then clear the request.
   useEffect(() => {
-    if (!viewRequest || !providers.some((p) => p.id === viewRequest)) return;
+    if (!viewRequest || !byId.has(viewRequest)) return;
     queueMicrotask(() => {
       setViewingId(viewRequest);
       requestView(null);
     });
-  }, [viewRequest, providers, requestView]);
+  }, [viewRequest, byId, requestView]);
 
   async function runAction(id: string, action: () => Promise<void>, fallback: string) {
     setActionError(null);
     setBusyId(id);
     try {
       await action();
+      refresh();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : fallback);
     } finally {
@@ -102,55 +106,8 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
   const handleReject = (id: string, reason: string) =>
     runAction(id, () => reject(id, reason), "Failed to reject provider");
 
-  const counts = useMemo(
-    () => ({
-      pending: providers.filter((p) => p.status === "pending").length,
-      verification: providers.filter((p) => p.status === "verification").length,
-      approved: providers.filter((p) => p.status === "approved").length,
-      rejected: providers.filter((p) => p.status === "rejected").length,
-    }),
-    [providers]
-  );
-
-  const [filters, setFilters] = useState<ProviderFilters>(defaultProviderFilters);
-  const patch = (next: Partial<ProviderFilters>) => setFilters((f) => ({ ...f, ...next }));
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    queueMicrotask(() => setNow(Date.now()));
-  }, [providers, filters.applied]);
-
-  // Everything in this stage, before search/filters: the pool the filter options and counts come from.
-  const stageProviders = useMemo(() => providers.filter((p) => p.status === status), [providers, status]);
-
-  const options = useMemo(() => {
-    const services = new Map<string, number>();
-    const cities = new Map<string, number>();
-    stageProviders.forEach((p) => {
-      p.categoryIds.forEach((id) => services.set(id, (services.get(id) ?? 0) + 1));
-      if (p.city && p.city !== "—") cities.set(p.city, (cities.get(p.city) ?? 0) + 1);
-    });
-    return {
-      services: [...services.entries()].sort((x, y) => y[1] - x[1]),
-      cities: [...cities.keys()].sort((x, y) => x.localeCompare(y)),
-      has: Object.fromEntries(providerHas.map((h) => [h.value, stageProviders.filter(h.test).length])),
-      gender: {
-        Male: stageProviders.filter((p) => p.gender === "Male").length,
-        Female: stageProviders.filter((p) => p.gender === "Female").length,
-      },
-    };
-  }, [stageProviders]);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const matching = q
-      ? stageProviders.filter((p) =>
-          [p.fullName, p.email, p.city, p.mobileNumber, p.kyc.idNumber, ...p.documents.map((d) => d.number)].some((field) =>
-            (field ?? "").toLowerCase().includes(q),
-          ),
-        )
-      : stageProviders;
-    return applyProviderFilters(matching, filters, now);
-  }, [stageProviders, query, filters, now]);
+  const stageTotal = counts?.[status] ?? 0;
+  const genderCount = (g: "Male" | "Female") => facets.gender[g] ?? 0;
 
   const chips = describeProviderFilters(filters, labelForCategory).map((c) => ({
     key: c.key,
@@ -160,10 +117,10 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
   const clearFilters = () => setFilters((f) => ({ ...defaultProviderFilters, sort: f.sort }));
   const filtersActive = chips.length > 0 || query.trim() !== "";
 
-  const viewingProvider = providers.find((p) => p.id === viewingId);
-  const rejectingProvider = providers.find((p) => p.id === rejectingId);
-  const editingProvider = providers.find((p) => p.id === editingId);
-  const deletingProvider = providers.find((p) => p.id === deletingId);
+  const viewingProvider = viewingId ? byId.get(viewingId) : undefined;
+  const rejectingProvider = rejectingId ? byId.get(rejectingId) : undefined;
+  const editingProvider = editingId ? byId.get(editingId) : undefined;
+  const deletingProvider = deletingId ? byId.get(deletingId) : undefined;
 
   return (
     <Card>
@@ -175,7 +132,7 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
             </span>
             <div className="leading-tight">
               <p className="text-sm font-semibold text-foreground">{stage.label}</p>
-              <p className="text-xs text-muted">{loading ? "Loading…" : `${counts[status]} ${counts[status] === 1 ? "provider" : "providers"}`}</p>
+              <p className="text-xs text-muted">{counts === null ? "Loading…" : `${stageTotal} ${stageTotal === 1 ? "provider" : "providers"}`}</p>
             </div>
           </div>
         </div>
@@ -189,21 +146,14 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
           onSort={(sort) => patch({ sort })}
           chips={chips}
           onClear={clearFilters}
-          quick={providerHas
-            .filter((h) => h.value !== "photo")
-            .map((h) => (
-              <Pill key={h.value} active={filters.has.includes(h.value)} onClick={() => patch({ has: toggle(filters.has, h.value) })} count={options.has[h.value]}>
-                {h.label}
-              </Pill>
-            ))}
           panel={
             <>
               <FilterGroup label="Service">
-                {options.services.length === 0 ? (
+                {facets.services.length === 0 ? (
                   <p className="text-xs text-subtle">No services on these providers yet.</p>
                 ) : (
                   <PillRow>
-                    {options.services.map(([key, count]) => (
+                    {facets.services.map(({ key, count }) => (
                       <Pill key={key} active={filters.services.includes(key)} onClick={() => patch({ services: toggle(filters.services, key) })} count={count}>
                         {labelForCategory(key)}
                       </Pill>
@@ -216,13 +166,13 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                   label="City"
                   value={filters.city}
                   onChange={(city) => patch({ city })}
-                  options={[{ value: "", label: "All cities" }, ...options.cities.map((c) => ({ value: c, label: c }))]}
+                  options={[{ value: "", label: "All cities" }, ...facets.cities.map((c) => ({ value: c.name, label: `${c.name} (${c.count})` }))]}
                 />
               </FilterGroup>
               <FilterGroup label="Gender">
                 <PillRow>
                   {(["Male", "Female"] as const).map((g) => (
-                    <Pill key={g} active={filters.gender === g} onClick={() => patch({ gender: filters.gender === g ? "any" : g })} count={options.gender[g]}>
+                    <Pill key={g} active={filters.gender === g} onClick={() => patch({ gender: filters.gender === g ? "any" : g })} count={genderCount(g)}>
                       {g}
                     </Pill>
                   ))}
@@ -240,13 +190,6 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
               <FilterGroup label="Applied">
                 <SelectField label="Applied" value={filters.applied} onChange={(applied) => patch({ applied: applied as ProviderFilters["applied"] })} options={datePresets} />
               </FilterGroup>
-              <FilterGroup label="Profile photo">
-                <PillRow>
-                  <Pill active={filters.has.includes("photo")} onClick={() => patch({ has: toggle(filters.has, "photo") })} count={options.has.photo}>
-                    Has photo
-                  </Pill>
-                </PillRow>
-              </FilterGroup>
             </>
           }
         />
@@ -259,7 +202,7 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
       {error && (
         <div className="flex items-center justify-between border-b border-border bg-danger-soft px-4 py-2 text-xs text-danger">
           <span>{error}</span>
-          <button onClick={refresh} className="font-medium underline">
+          <button onClick={() => list.reload()} className="font-medium underline">
             Retry
           </button>
         </div>
@@ -285,7 +228,7 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
           <tbody>
             {loading &&
               Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
-            {!loading && filtered.map((p, index) => {
+            {!loading && providers.map((p, index) => {
               const busy = busyId === p.id;
               return (
                 <tr
@@ -410,12 +353,10 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                 </tr>
               );
             })}
-            {!loading && filtered.length === 0 && (
+            {!loading && !error && providers.length === 0 && (
               <tr>
                 <td colSpan={11} className="px-4 py-12 text-center text-sm text-subtle">
-                  {providers.length === 0 ? (
-                    "No provider applications yet."
-                  ) : filtersActive && stageProviders.length > 0 ? (
+                  {filtersActive && stageTotal > 0 ? (
                     <span className="flex flex-col items-center gap-2">
                       No providers match these filters.
                       <button
@@ -444,8 +385,36 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
           <Skeleton className="h-3.5 w-40" />
         ) : (
           <span>
-            Showing {filtered.length} of {counts[status]} in {stage.label}
+            {total === 0
+              ? `0 in ${stage.label}`
+              : `Showing ${(page - 1) * PAGE_SIZE + 1}–${(page - 1) * PAGE_SIZE + providers.length} of ${total}${filtersActive ? " matching" : ""} in ${stage.label}`}
+            {fetching && !loading && <span className="ml-2 text-subtle">Updating…</span>}
           </span>
+        )}
+        {pages > 1 && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPage(page - 1)}
+              disabled={page <= 1 || fetching}
+              aria-label="Previous page"
+              className="flex h-8 w-8 items-center justify-center rounded-lg ring-1 ring-border transition hover:bg-surface-2 disabled:opacity-40"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="px-2 tabular-nums">
+              Page {page} of {pages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage(page + 1)}
+              disabled={page >= pages || fetching}
+              aria-label="Next page"
+              className="flex h-8 w-8 items-center justify-center rounded-lg ring-1 ring-border transition hover:bg-surface-2 disabled:opacity-40"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -474,7 +443,10 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
         <EditProviderModal
           provider={editingProvider}
           onClose={() => setEditingId(null)}
-          onSave={update}
+          onSave={async (...args: Parameters<typeof update>) => {
+            await update(...args);
+            refresh();
+          }}
         />
       )}
 
@@ -484,6 +456,7 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
           onCancel={() => setDeletingId(null)}
           onConfirm={async () => {
             await remove(deletingProvider.id);
+            refresh();
             setDeletingId(null);
           }}
         />

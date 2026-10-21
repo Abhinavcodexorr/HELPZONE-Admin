@@ -1,4 +1,4 @@
-import type { Provider, User } from "@/types";
+import type { User } from "@/types";
 
 const DAY = 86_400_000;
 
@@ -29,20 +29,11 @@ const presetLabel = (preset: DatePreset) => datePresets.find((p) => p.value === 
 /* ───────────── providers ───────────── */
 
 export type ExperienceBucket = "0-1" | "2-4" | "5-9" | "10+";
-export const experienceBuckets: { value: ExperienceBucket; label: string; test: (years: number) => boolean }[] = [
-  { value: "0-1", label: "0–1 yr", test: (y) => y < 2 },
-  { value: "2-4", label: "2–4 yrs", test: (y) => y >= 2 && y < 5 },
-  { value: "5-9", label: "5–9 yrs", test: (y) => y >= 5 && y < 10 },
-  { value: "10+", label: "10+ yrs", test: (y) => y >= 10 },
-];
-
-export type ProviderHas = "photo" | "id" | "pan" | "video" | "complete";
-export const providerHas: { value: ProviderHas; label: string; test: (p: Provider) => boolean }[] = [
-  { value: "video", label: "Has intro video", test: (p) => Boolean(p.introVideoUrl) },
-  { value: "id", label: "Has ID proof", test: (p) => p.documents.some((d) => d.image && !/pan/i.test(d.type)) || Boolean(p.kyc.idDocumentImage) },
-  { value: "pan", label: "Has PAN card", test: (p) => Boolean(p.panCard?.idDocumentImage) },
-  { value: "photo", label: "Has photo", test: (p) => Boolean(p.kyc.photoImage) },
-  { value: "complete", label: "Profile complete", test: (p) => p.profileComplete },
+export const experienceBuckets: { value: ExperienceBucket; label: string }[] = [
+  { value: "0-1", label: "0–1 yr" },
+  { value: "2-4", label: "2–4 yrs" },
+  { value: "5-9", label: "5–9 yrs" },
+  { value: "10+", label: "10+ yrs" },
 ];
 
 export type ProviderSort = "newest" | "oldest" | "name" | "experience";
@@ -53,12 +44,15 @@ export const providerSorts: { value: ProviderSort; label: string }[] = [
   { value: "experience", label: "Most experience" },
 ];
 
+/**
+ * The provider list filters. They are only *sent* to the API (see providerListQuery); the backend does the
+ * filtering and sorting, so the list is always the live data for exactly these keys.
+ */
 export interface ProviderFilters {
   services: string[]; // category keys
   city: string; // "" = any
   gender: "any" | "Male" | "Female";
   experience: ExperienceBucket[];
-  has: ProviderHas[];
   applied: DatePreset;
   sort: ProviderSort;
 }
@@ -68,36 +62,27 @@ export const defaultProviderFilters: ProviderFilters = {
   city: "",
   gender: "any",
   experience: [],
-  has: [],
   applied: "any",
   sort: "newest",
 };
 
-export const countProviderFilters = (f: ProviderFilters) =>
-  (f.services.length ? 1 : 0) +
-  (f.city ? 1 : 0) +
-  (f.gender !== "any" ? 1 : 0) +
-  (f.experience.length ? 1 : 0) +
-  f.has.length +
-  (f.applied !== "any" ? 1 : 0);
-
-export function applyProviderFilters(providers: Provider[], f: ProviderFilters, now: number): Provider[] {
-  const out = providers.filter((p) => {
-    if (f.services.length && !p.categoryIds.some((id) => f.services.includes(id))) return false;
-    if (f.city && p.city !== f.city) return false;
-    if (f.gender !== "any" && p.gender !== f.gender) return false;
-    if (f.experience.length && !experienceBuckets.some((b) => f.experience.includes(b.value) && b.test(p.experienceYears))) return false;
-    if (!f.has.every((h) => providerHas.find((x) => x.value === h)!.test(p))) return false;
-    return inDatePreset(p.submittedAt, f.applied, now);
-  });
-
-  const byDate = (a: Provider, b: Provider) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime();
-  return out.sort((a, b) => {
-    if (f.sort === "oldest") return byDate(a, b);
-    if (f.sort === "name") return a.fullName.localeCompare(b.fullName);
-    if (f.sort === "experience") return b.experienceYears - a.experienceYears || byDate(b, a);
-    return byDate(b, a);
-  });
+/** Query string for GET /api/providers: each filter is sent by its key. */
+export function providerListQuery(
+  status: string,
+  q: string,
+  f: ProviderFilters,
+  page: number,
+  limit: number,
+  tz: string,
+): string {
+  const params = new URLSearchParams({ status, page: String(page), limit: String(limit), sort: f.sort, tz });
+  if (q.trim()) params.set("q", q.trim());
+  if (f.services.length) params.set("categoryId", f.services.join(","));
+  if (f.city) params.set("city", f.city);
+  if (f.gender !== "any") params.set("gender", f.gender);
+  if (f.experience.length) params.set("experience", f.experience.join(","));
+  if (f.applied !== "any") params.set("applied", f.applied);
+  return params.toString();
 }
 
 export function describeProviderFilters(
@@ -110,9 +95,6 @@ export function describeProviderFilters(
   if (f.gender !== "any") chips.push({ key: "gender", label: f.gender, clear: { gender: "any" } });
   f.experience.forEach((e) =>
     chips.push({ key: `exp-${e}`, label: experienceBuckets.find((b) => b.value === e)!.label, clear: (cur) => ({ experience: cur.experience.filter((x) => x !== e) }) }),
-  );
-  f.has.forEach((h) =>
-    chips.push({ key: `has-${h}`, label: providerHas.find((x) => x.value === h)!.label, clear: (cur) => ({ has: cur.has.filter((x) => x !== h) }) }),
   );
   if (f.applied !== "any") chips.push({ key: "applied", label: `Applied: ${presetLabel(f.applied)}`, clear: { applied: "any" } });
   return chips;
