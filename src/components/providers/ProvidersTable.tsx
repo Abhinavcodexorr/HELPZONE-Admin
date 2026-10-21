@@ -294,9 +294,6 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                         )}
                       </div>
                     )}
-                    <p className="mt-1.5 whitespace-nowrap text-xs text-muted">
-                      {p.experienceYears} {p.experienceYears === 1 ? "yr" : "yrs"} experience
-                    </p>
                   </td>
                   <td className="px-4 py-3.5">
                     <p className="whitespace-nowrap text-fg-2">{p.city}</p>
