@@ -31,6 +31,10 @@ export interface BackendProvider {
   lastWorkingExperience?: Partial<LastJob>;
   emirate?: string;
   panNumber?: string;
+  panCardUrl?: string;
+  aadhaarNumber?: string;
+  aadhaarFrontUrl?: string;
+  aadhaarBackUrl?: string;
   introVideoUrl?: string;
   introVideoThumbnailUrl?: string;
   profileComplete?: boolean;
@@ -137,26 +141,38 @@ export function mapToProvider(provider: BackendProvider): Provider {
       idDocumentImage: provider.kyc?.idDocumentUrl || "",
       photoImage: provider.imageUrl || "",
     },
-    panCard: mapPanCard(provider.kycDocuments),
+    panCard: mapPanCard(provider),
     documents: mapDocuments(provider),
   };
 }
 
-// One entry per submitted document, so each type (Aadhaar, PAN card…) is shown on its own.
+// One entry per submitted document, so each type (Aadhaar front/back, PAN card…)
+// is shown on its own. The new KYC flow sends explicit aadhaar/pan fields; the
+// old kycDocuments array is kept for records submitted before that flow.
 function mapDocuments(provider: BackendProvider): Provider["documents"] {
-  const docs = (provider.kycDocuments ?? [])
+  const docs: Provider["documents"] = [];
+  if (provider.aadhaarFrontUrl || provider.aadhaarNumber) {
+    docs.push({ type: "Aadhaar Front", number: provider.aadhaarNumber || "", image: provider.aadhaarFrontUrl || "" });
+  }
+  if (provider.aadhaarBackUrl) {
+    docs.push({ type: "Aadhaar Back", number: provider.aadhaarNumber || "", image: provider.aadhaarBackUrl });
+  }
+  (provider.kycDocuments ?? [])
     .filter((d) => d.idType || d.idNumber || d.idDocumentUrl)
-    .map((d) => ({ type: d.idType?.trim() || "ID document", number: d.idNumber?.trim() || "", image: d.idDocumentUrl || "" }));
-  // A PAN number can be on the profile without a PAN document row.
-  if (provider.panNumber && !docs.some((d) => /pan/i.test(d.type))) {
-    docs.push({ type: "PAN Card", number: provider.panNumber, image: "" });
+    .forEach((d) => docs.push({ type: d.idType?.trim() || "ID document", number: d.idNumber?.trim() || "", image: d.idDocumentUrl || "" }));
+  // A PAN number/card can be on the profile without a legacy kycDocuments row.
+  if ((provider.panNumber || provider.panCardUrl) && !docs.some((d) => /pan/i.test(d.type))) {
+    docs.push({ type: "PAN Card", number: provider.panNumber || "", image: provider.panCardUrl || "" });
   }
   return docs;
 }
 
-// Finds the kycDocuments entry (if any) that is a PAN card, by idType.
-function mapPanCard(docs?: BackendProvider["kycDocuments"]): Provider["panCard"] {
-  const pan = docs?.find((d) => /pan/i.test(d.idType ?? ""));
+// New flow: explicit panCardUrl/panNumber. Old flow: a kycDocuments entry typed as PAN.
+function mapPanCard(provider: BackendProvider): Provider["panCard"] {
+  if (provider.panCardUrl) {
+    return { idNumber: provider.panNumber || "—", idDocumentImage: provider.panCardUrl };
+  }
+  const pan = provider.kycDocuments?.find((d) => /pan/i.test(d.idType ?? ""));
   if (!pan?.idDocumentUrl) return null;
   return { idNumber: pan.idNumber || "—", idDocumentImage: pan.idDocumentUrl };
 }
