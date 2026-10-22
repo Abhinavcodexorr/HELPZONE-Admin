@@ -60,6 +60,8 @@ export function PlanCard({
         </ul>
       )}
 
+      {/* Pushes the footer to the bottom so every card in a row is the same height. */}
+      <div className="flex-1" />
       <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
         <button
           type="button"

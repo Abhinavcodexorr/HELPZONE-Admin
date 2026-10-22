@@ -71,6 +71,8 @@ export function ServiceCard({
         {service.providerCount > 0 && <span className="text-subtle">· {service.approvedProviderCount} approved</span>}
       </div>
 
+      {/* Pushes the footer to the bottom so every card in a row is the same height. */}
+      <div className="flex-1" />
       <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
         <button
           type="button"
