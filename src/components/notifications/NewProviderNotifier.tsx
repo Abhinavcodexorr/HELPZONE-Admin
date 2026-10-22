@@ -32,17 +32,15 @@ interface Toast {
  */
 export function NewProviderNotifier() {
   const router = useRouter();
-  const { sync, requestView } = useProviders();
+  const { requestView } = useProviders();
   const { setItems, markRead } = useNotifications();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const known = useRef<Set<string> | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
-  const syncRef = useRef(sync);
   const setItemsRef = useRef(setItems);
   useEffect(() => {
-    syncRef.current = sync;
     setItemsRef.current = setItems;
-  }, [sync, setItems]);
+  }, [setItems]);
 
   const open = useCallback(
     (id: string) => {
@@ -150,7 +148,6 @@ export function NewProviderNotifier() {
         });
       }
       window.dispatchEvent(new CustomEvent(NEW_PROVIDER_EVENT, { detail: { count: fresh.length } }));
-      void syncRef.current();
     }
 
     poll();

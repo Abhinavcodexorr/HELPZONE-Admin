@@ -21,10 +21,10 @@ const json = (method: string, payload: unknown): RequestInit => ({
   body: JSON.stringify(payload),
 });
 
-export function useServices() {
+export function useServices({ auto = true }: { auto?: boolean } = {}) {
   const [services, setServices] = useState<Service[]>([]);
   const [detected, setDetected] = useState<DetectedCategory[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(auto);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -42,8 +42,8 @@ export function useServices() {
   }, []);
 
   useEffect(() => {
-    queueMicrotask(load);
-  }, [load]);
+    if (auto) queueMicrotask(load);
+  }, [auto, load]);
 
   /** Reloads without the loading skeleton (dashboard auto-refresh). Keeps the last good data on failure. */
   const sync = useCallback(async () => {

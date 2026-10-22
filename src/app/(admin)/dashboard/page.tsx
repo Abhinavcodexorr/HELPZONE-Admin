@@ -23,6 +23,7 @@ import { NeedsAttention } from "@/components/dashboard/NeedsAttention";
 import { PipelineCard } from "@/components/dashboard/PipelineCard";
 import { ProviderMix } from "@/components/dashboard/ProviderMix";
 import { TopLists } from "@/components/dashboard/TopLists";
+import { NEW_PROVIDER_EVENT } from "@/components/notifications/NewProviderNotifier";
 import { useDashboardStats } from "@/components/dashboard/useDashboardStats";
 import { useServices } from "@/components/services/useServices";
 import { Button } from "@/components/ui/Button";
@@ -43,27 +44,44 @@ function Reveal({ children, delay, className = "" }: { children: React.ReactNode
 }
 
 export default function DashboardPage() {
+  // The dashboard API returns every number, so that is the only call made. The provider and service lists
+  // are fetched only as a fallback when the backend doesn't have that API yet.
   const { providers, serverCounts, serverTotal, lastSyncedAt, loading, error, refresh, sync } = useProviders();
-  const { services, loading: servicesLoading, error: servicesError, sync: syncServices } = useServices();
-  const { stats, loading: statsLoading, sync: syncStats } = useDashboardStats();
-  const busy = loading || statsLoading;
+  const { services, loading: servicesLoading, error: servicesError, reload: loadServices, sync: syncServices } = useServices({ auto: false });
+  const { stats, loading: statsLoading, syncedAt, sync: syncStats } = useDashboardStats();
+  const fallback = !statsLoading && !stats;
+  const busy = statsLoading || (fallback && (loading || servicesLoading));
   const [now, setNow] = useState(() => Date.now());
   const [refreshing, setRefreshing] = useState(false);
 
-  // Keep the page alive: tick the clock, and quietly re-fetch both APIs every minute.
+  useEffect(() => {
+    if (!fallback) return;
+    queueMicrotask(() => {
+      void refresh();
+      void loadServices();
+    });
+  }, [fallback, refresh, loadServices]);
+
+  // Keep the page alive: tick the clock, and quietly re-fetch every minute and when a new registration arrives.
   useEffect(() => {
     const tick = setInterval(() => setNow(Date.now()), TICK_MS);
-    const reload = setInterval(() => {
-      if (document.hidden) return;
-      void sync();
-      void syncServices();
+    const reloadAll = () => {
       void syncStats();
+      if (fallback) {
+        void sync();
+        void syncServices();
+      }
+    };
+    const reload = setInterval(() => {
+      if (!document.hidden) reloadAll();
     }, RELOAD_MS);
+    window.addEventListener(NEW_PROVIDER_EVENT, reloadAll);
     return () => {
       clearInterval(tick);
       clearInterval(reload);
+      window.removeEventListener(NEW_PROVIDER_EVENT, reloadAll);
     };
-  }, [sync, syncServices, syncStats]);
+  }, [fallback, sync, syncServices, syncStats]);
 
   const metrics = useMemo(
     () =>
@@ -74,7 +92,7 @@ export default function DashboardPage() {
   async function handleRefresh() {
     setRefreshing(true);
     setNow(Date.now());
-    await Promise.all([sync(), syncServices(), syncStats()]);
+    await Promise.all([syncStats(), ...(fallback ? [sync(), syncServices()] : [])]);
     setRefreshing(false);
   }
 
@@ -92,7 +110,7 @@ export default function DashboardPage() {
         actions={
           <>
             <span className="hidden text-xs text-muted sm:inline">
-              {lastSyncedAt ? `Updated ${timeAgo(new Date(lastSyncedAt).toISOString(), now).toLowerCase()}` : "Loading…"}
+              {(syncedAt ?? lastSyncedAt) ? `Updated ${timeAgo(new Date((syncedAt ?? lastSyncedAt) as number).toISOString(), now).toLowerCase()}` : "Loading…"}
             </span>
             <Button variant="secondary" size="sm" onClick={handleRefresh} disabled={refreshing || busy}>
               {refreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}

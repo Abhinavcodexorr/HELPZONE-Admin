@@ -10,6 +10,7 @@ import type { ServerDashboard } from "@/lib/dashboard-metrics";
 export function useDashboardStats() {
   const [stats, setStats] = useState<ServerDashboard | null>(null);
   const [loading, setLoading] = useState(true);
+  const [syncedAt, setSyncedAt] = useState<number | null>(null);
 
   const sync = useCallback(async () => {
     try {
@@ -18,7 +19,10 @@ export function useDashboardStats() {
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload drops the old session's data
       if (res.status === 401) window.location.href = "/login";
       const body = await res.json().catch(() => null);
-      if (res.ok && body?.success) setStats(body as ServerDashboard);
+      if (res.ok && body?.success) {
+        setStats(body as ServerDashboard);
+        setSyncedAt(Date.now());
+      }
       else if (res.status === 404) setStats(null); // backend without this endpoint yet
     } catch {
       // Keep the last good numbers; the next tick retries.
@@ -31,5 +35,5 @@ export function useDashboardStats() {
     queueMicrotask(sync);
   }, [sync]);
 
-  return { stats, loading, sync };
+  return { stats, loading, syncedAt, sync };
 }

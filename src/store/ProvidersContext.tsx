@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { Provider, ProviderStatus, UpdateProviderInput } from "@/types";
 import { mapToProvider, BackendProvider } from "@/lib/map-provider";
 
@@ -39,7 +39,8 @@ async function parseJson(res: Response): Promise<{ success?: boolean; message?: 
 
 export function ProvidersProvider({ children }: { children: React.ReactNode }) {
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Nothing is fetched until a page asks (refresh/sync); the provider pages load their own filtered lists.
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewRequest, requestView] = useState<string | null>(null);
   const [serverCounts, setServerCounts] = useState<StageCounts | null>(null);
@@ -85,12 +86,6 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
       // Keep the current list; the next poll or manual refresh will retry.
     }
   }, [applyList]);
-
-  useEffect(() => {
-    // Deferred via a microtask so the effect body itself never synchronously
-    // triggers a state update (react-hooks/set-state-in-effect).
-    queueMicrotask(load);
-  }, [load]);
 
   const verify = useCallback(async (id: string) => {
     const res = await fetch(`/api/providers/${id}/verify`, { method: "PATCH" });

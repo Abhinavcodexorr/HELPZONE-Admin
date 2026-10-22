@@ -268,18 +268,12 @@ export function ProviderDetailModal({
           <InfoCard icon={User} iconBg="bg-primary-soft text-primary" title="👤 Personal Details">
             <Row label="Full Name" value={p.fullName} />
             <Row label="Gender" value={p.gender} />
-            <Row label="Age" value={p.age ? `${p.age} years` : undefined} />
             <Row label="Nationality" value={p.nationality} />
-            <div className="flex items-start gap-3 py-2.5">
-              <span className="min-w-[130px] text-xs font-medium text-muted shrink-0">Languages</span>
-              <ChipList items={p.languages} tone="blue" />
-            </div>
           </InfoCard>
 
           {/* ── CONTACT & LOCATION ── */}
           <InfoCard icon={MapPin} iconBg="bg-success-soft text-success" title="📍 Contact & Location">
             <Row label="Mobile Number" value={p.mobileNumber} />
-            <Row label="Email" value={p.email} />
             <Row label="City" value={p.city} />
             <Row label="State" value={p.state} />
             {p.emirate && <Row label="Emirate" value={p.emirate} />}
@@ -291,15 +285,6 @@ export function ProviderDetailModal({
               <span className="min-w-[130px] text-xs font-medium text-muted shrink-0">Job Categories</span>
               <ChipList items={p.categories} tone="indigo" />
             </div>
-            <Row
-              label="Experience"
-              value={`${p.experienceYears} ${p.experienceYears === 1 ? "year" : "years"}`}
-            />
-            <Row
-              label="Monthly Salary"
-              value={p.monthlySalary !== undefined ? `${formatRupees(p.monthlySalary)} / month` : undefined}
-            />
-            <Row label="Job Type" value={p.duration} />
             {p.jobDescription && (
               <div className="mt-3 rounded-xl bg-surface-2 p-3 text-sm text-foreground leading-relaxed ring-1 ring-border">
                 <p className="text-xs font-medium text-muted mb-1">📝 Job Description</p>
@@ -345,9 +330,6 @@ export function ProviderDetailModal({
                       <span className="rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary">{doc.type}</span>
                       <span className="text-[11px] text-subtle">Document {i + 1} of {p.documents.length}</span>
                     </div>
-                    <div className="mt-2">
-                      <Row label={`${doc.type} Number`} value={doc.number || "—"} />
-                    </div>
                     <div className="mt-3">
                       {!doc.image ? (
                         <div className="flex h-20 items-center justify-center rounded-xl border-2 border-dashed border-border text-sm text-subtle">
@@ -373,7 +355,7 @@ export function ProviderDetailModal({
                             setLightbox({
                               src: doc.image,
                               alt: `${p.fullName} ${doc.type}`,
-                              caption: `${doc.type}${doc.number ? ` · ${doc.number}` : ""}`,
+                              caption: doc.type,
                             })
                           }
                           className="group relative block w-full max-w-xs overflow-hidden rounded-xl ring-1 ring-border"

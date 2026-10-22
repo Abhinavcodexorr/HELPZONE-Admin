@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/Card";
 import { formatDate, formatTime } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Phone } from "lucide-react";
 import { providerStages } from "@/lib/provider-stages";
-import { labelForCategory } from "@/lib/map-provider";
 import {
   datePresets,
   defaultProviderFilters,
@@ -18,7 +17,9 @@ import {
   type ProviderFilters,
 } from "@/lib/list-filters";
 import { PAGE_SIZE, useProviderList } from "./useProviderList";
-import { ProviderStatus } from "@/types";
+import type { Provider, ProviderStatus } from "@/types";
+import { labelForCategory, mapToProvider, type BackendProvider } from "@/lib/map-provider";
+import { NEW_PROVIDER_EVENT } from "@/components/notifications/NewProviderNotifier";
 import { useProviders } from "@/store/ProvidersContext";
 import { DocumentThumbnail } from "./DocumentThumbnail";
 import { IdProofThumbnail } from "./IdProofThumbnail";
@@ -54,7 +55,7 @@ const statusLabel: Record<ProviderStatus, string> = {
 export function ProvidersTable({ status }: { status: ProviderStatus }) {
   // The context list feeds the dashboard and notifications, and the actions below; this table's own rows
   // come from the API for exactly the chosen filters (see useProviderList).
-  const { providers: allProviders, lastSyncedAt, viewRequest, requestView, verify, approve, reject, update, remove } = useProviders();
+  const { viewRequest, requestView, verify, approve, reject, update, remove } = useProviders();
   const stage = providerStages.find((t) => t.status === status) ?? providerStages[0];
 
   const [query, setQuery] = useState("");
@@ -63,11 +64,11 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
   const list = useProviderList(status, query, filters);
   const { providers, loading, fetching, error, total, pages, page, setPage, counts, facets, refresh } = list;
 
-  // New registrations / changes picked up by the notification poll: reload this list too.
+  // The notification poll saw a new registration: reload this list.
   useEffect(() => {
-    if (lastSyncedAt) queueMicrotask(refresh);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastSyncedAt]);
+    window.addEventListener(NEW_PROVIDER_EVENT, refresh);
+    return () => window.removeEventListener(NEW_PROVIDER_EVENT, refresh);
+  }, [refresh]);
 
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -76,17 +77,32 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  // Modals look a provider up in this page of results first, then in the app-wide list.
-  const byId = useMemo(() => new Map([...allProviders, ...providers].map((p) => [p.id, p])), [allProviders, providers]);
+  // A provider opened from a notification may be on another stage or page, so it is fetched by id.
+  const [fetched, setFetched] = useState<Provider | null>(null);
+  const byId = useMemo(() => new Map([...(fetched ? [fetched] : []), ...providers].map((p) => [p.id, p])), [fetched, providers]);
 
-  // A notification asked for this provider's details: open the popup once it is known, then clear the request.
   useEffect(() => {
-    if (!viewRequest || !byId.has(viewRequest)) return;
-    queueMicrotask(() => {
-      setViewingId(viewRequest);
-      requestView(null);
-    });
-  }, [viewRequest, byId, requestView]);
+    if (!viewRequest) return;
+    const id = viewRequest;
+    const inList = providers.find((p) => p.id === id);
+    if (inList) {
+      queueMicrotask(() => {
+        setViewingId(id);
+        requestView(null);
+      });
+      return;
+    }
+    fetch(`/api/providers/${encodeURIComponent(id)}`, { cache: "no-store" })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json?.success && json.data) {
+          setFetched(mapToProvider(json.data as BackendProvider));
+          setViewingId(id);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => requestView(null));
+  }, [viewRequest, providers, requestView]);
 
   async function runAction(id: string, action: () => Promise<void>, fallback: string) {
     setActionError(null);
