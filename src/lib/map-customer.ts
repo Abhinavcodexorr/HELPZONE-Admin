@@ -8,6 +8,13 @@ export interface BackendCustomer {
   phone?: string;
   emirate?: string;
   address?: string;
+  city?: string;
+  state?: string;
+  lookingFor?: string[];
+  requirementType?: string;
+  bookingCount?: number;
+  lastBookingAt?: string | null;
+  favouriteCount?: number;
   isActive?: boolean;
   blockedAt?: string | null;
   blockReason?: string;
@@ -34,8 +41,13 @@ export function mapToUser(customer: BackendCustomer): User {
     email: customer.email || "—",
     phone: customer.phone || "—",
     avatarColor: colorForId(customer.id),
-    city: customer.emirate || "—",
+    city: customer.city || customer.emirate || "—",
     address: customer.address || "",
+    state: customer.state || "",
+    lookingFor: customer.lookingFor ?? [],
+    requirementType: customer.requirementType || "",
+    bookings: customer.bookingCount ?? 0,
+    lastBookingAt: customer.lastBookingAt ?? null,
     joinedAt: customer.createdAt || new Date().toISOString(),
     status: statusFor(customer.isActive),
     blockedAt: customer.blockedAt ?? null,
@@ -48,6 +60,7 @@ export function mapToUser(customer: BackendCustomer): User {
 export function mapToUserDetail(customer: BackendCustomerDetail): UserDetail {
   return {
     ...mapToUser(customer),
+    favouriteCount: customer.favouriteCount ?? 0,
     subscription: customer.subscription ?? { current: null, upcoming: null, history: [] },
   };
 }

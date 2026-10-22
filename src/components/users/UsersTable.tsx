@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FilterGroup, FilterToolbar, Pill, PillRow, SelectField } from "@/components/ui/filters";
 import { formatDate } from "@/lib/utils";
+import { labelForCategory } from "@/lib/map-provider";
 import {
   applyCustomerFilters,
   customerPresetLabel,
@@ -89,13 +90,16 @@ export function UsersTable({
   function exportCsv() {
     const cell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
     const rows = [
-      ["Name", "Email", "Phone", "City", "Address", "Plan", "Plan expires", "Joined", "Status", "Block reason"],
+      ["Name", "Email", "Phone", "City", "State", "Address", "Looking for", "Bookings", "Plan", "Plan expires", "Joined", "Status", "Block reason"],
       ...filtered.map((u) => [
         u.name,
         u.email,
         u.phone,
         u.city,
+        u.state,
         u.address,
+        u.lookingFor.map(labelForCategory).join("; "),
+        u.bookings,
         u.currentPlan?.planName ?? "",
         u.currentPlan ? formatDate(u.currentPlan.expiresAt) : "",
         formatDate(u.joinedAt),
@@ -184,7 +188,7 @@ export function UsersTable({
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[860px] text-left text-sm">
+        <table className="w-full min-w-[980px] text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-surface-2 text-xs uppercase tracking-wide text-subtle">
               <th className="w-10 px-4 py-3">
@@ -192,7 +196,8 @@ export function UsersTable({
               </th>
               <th className="px-4 py-3 font-medium">Customer</th>
               <th className="px-4 py-3 font-medium">Phone</th>
-              <th className="px-4 py-3 font-medium">City</th>
+              <th className="px-4 py-3 font-medium">Location</th>
+              <th className="px-4 py-3 font-medium">Looking for</th>
               <th className="px-4 py-3 font-medium">Plan</th>
               <th className="px-4 py-3 font-medium">Joined</th>
               <th className="px-4 py-3 font-medium">Status</th>
@@ -225,7 +230,24 @@ export function UsersTable({
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-fg-2">{u.phone}</td>
-                  <td className="px-4 py-3 text-fg-2">{u.city}</td>
+                  <td className="px-4 py-3">
+                    <p className="whitespace-nowrap text-fg-2">{u.city}</p>
+                    {u.state && <p className="whitespace-nowrap text-xs text-muted">{u.state}</p>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {u.lookingFor.length === 0 ? (
+                      <span className="text-xs text-subtle">—</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {u.lookingFor.slice(0, 2).map((k) => (
+                          <Badge key={k} tone="indigo">
+                            {labelForCategory(k)}
+                          </Badge>
+                        ))}
+                        {u.lookingFor.length > 2 && <Badge tone="gray">+{u.lookingFor.length - 2}</Badge>}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     {u.currentPlan ? (
                       <>
@@ -271,7 +293,7 @@ export function UsersTable({
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-sm text-subtle">
+                <td colSpan={9} className="px-4 py-10 text-center text-sm text-subtle">
                   <span className="flex flex-col items-center gap-2">
                     No customers match your filters.
                     {filtersActive && (

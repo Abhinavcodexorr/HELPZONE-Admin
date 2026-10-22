@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDate, formatDateTime, formatRupees, timeAgo } from "@/lib/utils";
+import { labelForCategory } from "@/lib/map-provider";
 import type { Subscription, User, UserDetail } from "@/types";
 
 const planTone: Record<Subscription["status"], "green" | "blue" | "gray" | "red"> = {
@@ -175,7 +176,25 @@ export function UserDetailModal({
             <Row label="Email">{user.email}</Row>
             <Row label="Phone">{user.phone}</Row>
             <Row label="City">{user.city}</Row>
+            {user.state && <Row label="State">{user.state}</Row>}
             {user.address && <Row label="Address">{user.address}</Row>}
+            {user.requirementType && <Row label="Needs">{user.requirementType}</Row>}
+            {user.lookingFor.length > 0 && (
+              <Row label="Looking for">
+                <span className="flex flex-wrap gap-1.5">
+                  {user.lookingFor.map((k) => (
+                    <span key={k} className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary">
+                      {labelForCategory(k)}
+                    </span>
+                  ))}
+                </span>
+              </Row>
+            )}
+            <Row label="Activity">
+              {user.bookings} booking{user.bookings === 1 ? "" : "s"}
+              {user.lastBookingAt ? ` · last ${formatDate(user.lastBookingAt)}` : ""}
+              {detail ? ` · ${detail.favouriteCount} favourite${detail.favouriteCount === 1 ? "" : "s"}` : ""}
+            </Row>
           </div>
 
           <h4 className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wide text-subtle">Subscription</h4>

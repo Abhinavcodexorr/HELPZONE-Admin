@@ -10,6 +10,12 @@ export interface User {
   avatarColor: string;
   city: string;
   address: string;
+  state: string;
+  /** Service keys they are looking for. */
+  lookingFor: string[];
+  requirementType: string;
+  bookings: number;
+  lastBookingAt: string | null;
   joinedAt: string;
   /** "inactive" is a blocked account (it can't sign in or book). */
   status: UserStatus;
@@ -38,6 +44,7 @@ export interface Subscription {
 }
 
 export interface UserDetail extends User {
+  favouriteCount: number;
   subscription: { current: Subscription | null; upcoming: Subscription | null; history: Subscription[] };
 }
 
