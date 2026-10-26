@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Ban, CheckCircle2, Download, Eye } from "lucide-react";
-import { Avatar } from "@/components/ui/Avatar";
-import { Badge } from "@/components/ui/Badge";
+import { Ban, CheckCircle2, Download } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FilterGroup, FilterToolbar, Pill, PillRow, SelectField } from "@/components/ui/filters";
@@ -19,9 +17,9 @@ import {
 } from "@/lib/list-filters";
 import type { User, UserDetail, UserStatus } from "@/types";
 import { BlockUserModal } from "./BlockUserModal";
+import { CustomerCard } from "./CustomerCard";
 import { UserDetailModal } from "./UserDetailModal";
 
-const statusTone: Record<UserStatus, "green" | "red"> = { active: "green", inactive: "red" };
 const statusLabel: Record<UserStatus, string> = { active: "Active", inactive: "Blocked" };
 
 export function UsersTable({
@@ -187,134 +185,42 @@ export function UsersTable({
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[980px] text-left text-sm">
-          <thead>
-            <tr className="border-b border-border bg-surface-2 text-xs uppercase tracking-wide text-subtle">
-              <th className="w-10 px-4 py-3">
-                <input type="checkbox" checked={allShownSelected} onChange={toggleAll} aria-label="Select all shown customers" className="h-4 w-4 cursor-pointer accent-[var(--primary)]" />
-              </th>
-              <th className="px-4 py-3 font-medium">Customer</th>
-              <th className="px-4 py-3 font-medium">Phone</th>
-              <th className="px-4 py-3 font-medium">Location</th>
-              <th className="px-4 py-3 font-medium">Looking for</th>
-              <th className="px-4 py-3 font-medium">Plan</th>
-              <th className="px-4 py-3 font-medium">Joined</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((u) => {
-              const blocked = u.status === "inactive";
-              const busy = busyIds.has(u.id);
-              return (
-                <tr
-                  key={u.id}
-                  onClick={(e) => {
-                    if ((e.target as HTMLElement).closest("button, a, input")) return;
-                    setViewingId(u.id);
-                  }}
-                  className={`cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-surface-2 ${blocked ? "bg-danger-soft/30" : ""}`}
-                >
-                  <td className="px-4 py-3">
-                    <input type="checkbox" checked={selected.has(u.id)} onChange={() => toggleOne(u.id)} aria-label={`Select ${u.name}`} className="h-4 w-4 cursor-pointer accent-[var(--primary)]" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={u.name} color={u.avatarColor} />
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-foreground">{u.name}</p>
-                        <p className="truncate text-xs text-muted">{u.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-fg-2">{u.phone}</td>
-                  <td className="px-4 py-3">
-                    <p className="whitespace-nowrap text-fg-2">{u.city}</p>
-                    {u.state && <p className="whitespace-nowrap text-xs text-muted">{u.state}</p>}
-                  </td>
-                  <td className="px-4 py-3">
-                    {u.lookingFor.length === 0 ? (
-                      <span className="text-xs text-subtle">—</span>
-                    ) : (
-                      <div className="flex flex-wrap gap-1">
-                        {u.lookingFor.slice(0, 2).map((k) => (
-                          <Badge key={k} tone="indigo">
-                            {labelForCategory(k)}
-                          </Badge>
-                        ))}
-                        {u.lookingFor.length > 2 && <Badge tone="gray">+{u.lookingFor.length - 2}</Badge>}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {u.currentPlan ? (
-                      <>
-                        <p className="whitespace-nowrap font-medium text-foreground">{u.currentPlan.planName}</p>
-                        <p className="whitespace-nowrap text-xs text-muted">
-                          Expires {formatDate(u.currentPlan.expiresAt)} · {u.currentPlan.daysLeft}d left
-                        </p>
-                      </>
-                    ) : (
-                      <span className="text-xs text-subtle">No plan</span>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-muted">{formatDate(u.joinedAt)}</td>
-                  <td className="px-4 py-3">
-                    <Badge tone={statusTone[u.status]} dot>
-                      {statusLabel[u.status]}
-                    </Badge>
-                    {blocked && (
-                      <p className="mt-1 max-w-[170px] truncate text-[11px] text-muted" title={u.blockReason}>
-                        {u.blockedUntil ? `Until ${formatDate(u.blockedUntil)}` : "Until unblocked"}
-                        {u.blockReason ? ` · ${u.blockReason}` : ""}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => setViewingId(u.id)} aria-label={`View ${u.name}`} title="View details" className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-surface-3 hover:text-foreground active:scale-90">
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      {blocked ? (
-                        <Button size="sm" variant="secondary" disabled={busy} onClick={() => onUnblock([u.id])}>
-                          <CheckCircle2 className="h-3.5 w-3.5" /> {busy ? "…" : "Unblock"}
-                        </Button>
-                      ) : (
-                        <Button size="sm" variant="secondary" disabled={busy} onClick={() => setBlockingIds([u.id])} className="text-danger">
-                          <Ban className="h-3.5 w-3.5" /> Block
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={9} className="px-4 py-10 text-center text-sm text-subtle">
-                  <span className="flex flex-col items-center gap-2">
-                    No customers match your filters.
-                    {filtersActive && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setQuery("");
-                          clearFilters();
-                        }}
-                        className="font-semibold text-primary hover:underline"
-                      >
-                        Clear search and filters
-                      </button>
-                    )}
-                  </span>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 text-xs text-muted">
+        <input type="checkbox" checked={allShownSelected} onChange={toggleAll} aria-label="Select all shown customers" className="h-4 w-4 cursor-pointer accent-[var(--primary)]" />
+        <span>Select all shown</span>
       </div>
+
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 px-4 py-12 text-center text-sm text-subtle">
+          No customers match your filters.
+          {filtersActive && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                clearFilters();
+              }}
+              className="font-semibold text-primary hover:underline"
+            >
+              Clear search and filters
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((u) => (
+            <CustomerCard
+              key={u.id}
+              user={u}
+              busy={busyIds.has(u.id)}
+              selected={selected.has(u.id)}
+              onSelect={() => toggleOne(u.id)}
+              onOpen={() => setViewingId(u.id)}
+              onToggle={() => (u.status === "inactive" ? onUnblock([u.id]) : setBlockingIds([u.id]))}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="flex items-center justify-between border-t border-border px-4 py-3 text-xs text-muted">
         <span>

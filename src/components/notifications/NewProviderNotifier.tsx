@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, X } from "lucide-react";
 import { useNotifications, type NotificationItem } from "@/store/NotificationsContext";
-import { useProviders } from "@/store/ProvidersContext";
 
 const POLL_MS = 30_000;       // base poll interval: 30 s
 const MAX_BACKOFF_MS = 300_000; // max back-off cap: 5 min
@@ -32,7 +31,6 @@ interface Toast {
  */
 export function NewProviderNotifier() {
   const router = useRouter();
-  const { requestView } = useProviders();
   const { setItems, markRead } = useNotifications();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const known = useRef<Set<string> | null>(null);
@@ -46,10 +44,9 @@ export function NewProviderNotifier() {
     (id: string) => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
       markRead(id);
-      requestView(id);
-      router.push("/providers/new");
+      router.push(`/providers/new/${id}`);
     },
-    [markRead, requestView, router],
+    [markRead, router],
   );
 
   const dismiss = useCallback((id: string) => setToasts((prev) => prev.filter((t) => t.id !== id)), []);

@@ -37,6 +37,7 @@ export interface BackendProvider {
   aadhaarBackUrl?: string;
   introVideoUrl?: string;
   introVideoThumbnailUrl?: string;
+  serviceRadiusKm?: number;
   profileComplete?: boolean;
   imageUrl?: string;
   kyc?: { idType?: string; idNumber?: string; idDocumentUrl?: string };
@@ -130,6 +131,7 @@ export function mapToProvider(provider: BackendProvider): Provider {
     panNumber: provider.panNumber ?? "",
     introVideoUrl: provider.introVideoUrl ?? "",
     introVideoThumbnailUrl: provider.introVideoThumbnailUrl ?? "",
+    serviceRadiusKm: provider.serviceRadiusKm ?? null,
     profileComplete: provider.profileComplete ?? false,
     isActive: provider.isActive ?? true,
     submittedAt: provider.createdAt,

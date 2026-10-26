@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import {
+  ArrowLeft,
   Briefcase,
   Check,
   ExternalLink,
@@ -10,7 +12,9 @@ import {
   IdCard,
   MapPin,
   Play,
+  Pencil,
   Phone,
+  Radar,
   ShieldCheck,
   User,
   VideoOff,
@@ -113,20 +117,38 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export function ProviderDetailModal({
+export function ProviderDetailView({
   provider,
-  onClose,
+  backHref,
+  backLabel,
+  editHref,
   onVerify,
   onApprove,
   onReject,
 }: {
   provider: Provider;
-  onClose: () => void;
-  onVerify: (id: string) => void;
-  onApprove: (id: string) => void;
-  onReject: (id: string, reason: string) => void;
+  backHref: string;
+  backLabel: string;
+  editHref: string;
+  onVerify: (id: string) => Promise<void>;
+  onApprove: (id: string) => Promise<void>;
+  onReject: (id: string, reason: string) => Promise<void>;
 }) {
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  async function run(action: () => Promise<void>) {
+    setBusy(true);
+    setActionError(null);
+    try {
+      await action();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
+  }
   const [lightbox, setLightbox] = useState<{ src: string; alt: string; caption: string } | null>(null);
   const [photoFailed, setPhotoFailed] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -138,15 +160,12 @@ export function ProviderDetailModal({
   const waNumber = waDigits.length === 10 ? `91${waDigits}` : waDigits;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 animate-fade-in bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <div className="mx-auto w-full max-w-4xl">
+      <Link href={backHref} className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted transition hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" /> Back to {backLabel}
+      </Link>
 
-      {/* Modal shell */}
-      <div className="relative flex max-h-[96vh] w-full max-w-3xl animate-pop-in flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl bg-background shadow-2xl ring-1 ring-border">
+      <div className="flex flex-col overflow-hidden rounded-3xl bg-background shadow-sm ring-1 ring-border">
 
         {/* ── TOP HEADER BAR ── */}
         <div className="relative flex items-center gap-4 px-5 py-4 bg-surface border-b border-border shrink-0">
@@ -198,7 +217,7 @@ export function ProviderDetailModal({
           </div>
 
           {/* Call / WhatsApp (icons only) */}
-          <div className="mr-14 flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {[
               {
                 href: phoneOk ? `tel:${p.mobileNumber}` : undefined,
@@ -240,18 +259,16 @@ export function ProviderDetailModal({
             )}
           </div>
 
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-surface-3 text-muted ring-1 ring-border transition hover:bg-danger-soft hover:text-danger active:scale-90"
+          <Link
+            href={editHref}
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary-soft px-3.5 py-2 text-sm font-semibold text-primary ring-1 ring-primary/15 transition hover:bg-primary hover:text-primary-foreground active:scale-95"
           >
-            <X className="h-4 w-4" />
-          </button>
+            <Pencil className="h-3.5 w-3.5" /> Edit
+          </Link>
         </div>
 
         {/* ── SCROLLABLE BODY ── */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        <div className="space-y-4 p-4 sm:p-5">
 
           {/* Rejection banner */}
           {p.status === "rejected" && p.rejectionReason && (
@@ -284,6 +301,14 @@ export function ProviderDetailModal({
             <div className="flex items-start gap-3 py-2.5 border-b border-border">
               <span className="min-w-[130px] text-xs font-medium text-muted shrink-0">Job Categories</span>
               <ChipList items={p.categories} tone="indigo" />
+            </div>
+            <div className="flex items-start gap-3 py-2.5 border-b border-border">
+              <span className="flex min-w-[130px] shrink-0 items-center gap-1 text-xs font-medium text-muted">
+                <Radar className="h-3 w-3" /> Service Radius
+              </span>
+              <span className="text-sm font-semibold text-foreground">
+                {p.serviceRadiusKm ? `Within ${p.serviceRadiusKm} km` : <span className="font-normal text-subtle">Not set</span>}
+              </span>
             </div>
             {p.jobDescription && (
               <div className="mt-3 rounded-xl bg-surface-2 p-3 text-sm text-foreground leading-relaxed ring-1 ring-border">
@@ -460,19 +485,21 @@ export function ProviderDetailModal({
 
         {/* ── ACTION FOOTER ── */}
         {(p.status === "pending" || p.status === "verification") && (
-          <div className="shrink-0 border-t border-border bg-surface px-5 py-4">
+          <div className="sticky bottom-0 border-t border-border bg-surface px-5 py-4">
             {/* Helper text */}
             <p className="mb-3 text-center text-sm text-muted">
               {p.status === "pending"
                 ? "👆 New request — tap Verify to start the review process."
                 : "👆 Documents are under review — Approve or Reject below."}
             </p>
+            {actionError && <p className="mb-3 text-center text-sm text-danger">{actionError}</p>}
             <div className="flex gap-3">
               {p.status === "verification" && (
                 <Button
                   variant="secondary"
                   className="flex-1 text-danger hover:bg-danger-soft border border-danger/20"
                   onClick={() => setShowRejectModal(true)}
+                  disabled={busy}
                 >
                   <X className="h-4 w-4" /> ❌ Reject
                 </Button>
@@ -480,7 +507,8 @@ export function ProviderDetailModal({
               {p.status === "pending" ? (
                 <Button
                   className="flex-1"
-                  onClick={() => { onVerify(p.id); onClose(); }}
+                  onClick={() => run(() => onVerify(p.id))}
+                  disabled={busy}
                 >
                   <ShieldCheck className="h-4 w-4" /> 🔍 Verify
                 </Button>
@@ -488,7 +516,8 @@ export function ProviderDetailModal({
                 <Button
                   variant="success"
                   className="flex-1"
-                  onClick={() => { onApprove(p.id); onClose(); }}
+                  onClick={() => run(() => onApprove(p.id))}
+                  disabled={busy}
                 >
                   <Check className="h-4 w-4" /> ✅ Approve
                 </Button>
@@ -503,9 +532,8 @@ export function ProviderDetailModal({
           providerName={p.fullName}
           onCancel={() => setShowRejectModal(false)}
           onConfirm={(reason) => {
-            onReject(p.id, reason);
             setShowRejectModal(false);
-            onClose();
+            void run(() => onReject(p.id, reason));
           }}
         />
       )}

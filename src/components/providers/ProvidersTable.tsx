@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { FilterGroup, FilterToolbar, Pill, PillRow, SelectField, toggle } from "@/components/ui/filters";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -17,17 +18,15 @@ import {
   type ProviderFilters,
 } from "@/lib/list-filters";
 import { PAGE_SIZE, useProviderList } from "./useProviderList";
-import type { Provider, ProviderStatus } from "@/types";
-import { labelForCategory, mapToProvider, type BackendProvider } from "@/lib/map-provider";
+import type { ProviderStatus } from "@/types";
+import { labelForCategory } from "@/lib/map-provider";
 import { NEW_PROVIDER_EVENT } from "@/components/notifications/NewProviderNotifier";
 import { useProviders } from "@/store/ProvidersContext";
 import { DocumentThumbnail } from "./DocumentThumbnail";
 import { IdProofThumbnail } from "./IdProofThumbnail";
 import { PhotoThumbnail } from "./PhotoThumbnail";
 import { VideoThumbnail } from "./VideoThumbnail";
-import { ProviderDetailModal } from "./ProviderDetailModal";
 import { RejectModal } from "./RejectModal";
-import { EditProviderModal } from "./EditProviderModal";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
 import { ActionsMenu } from "./ActionsMenu";
 
@@ -55,7 +54,8 @@ const statusLabel: Record<ProviderStatus, string> = {
 export function ProvidersTable({ status }: { status: ProviderStatus }) {
   // The context list feeds the dashboard and notifications, and the actions below; this table's own rows
   // come from the API for exactly the chosen filters (see useProviderList).
-  const { viewRequest, requestView, verify, approve, reject, update, remove } = useProviders();
+  const router = useRouter();
+  const { verify, approve, reject, remove } = useProviders();
   const stage = providerStages.find((t) => t.status === status) ?? providerStages[0];
 
   const [query, setQuery] = useState("");
@@ -70,39 +70,13 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
     return () => window.removeEventListener(NEW_PROVIDER_EVENT, refresh);
   }, [refresh]);
 
-  const [viewingId, setViewingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  // A provider opened from a notification may be on another stage or page, so it is fetched by id.
-  const [fetched, setFetched] = useState<Provider | null>(null);
-  const byId = useMemo(() => new Map([...(fetched ? [fetched] : []), ...providers].map((p) => [p.id, p])), [fetched, providers]);
-
-  useEffect(() => {
-    if (!viewRequest) return;
-    const id = viewRequest;
-    const inList = providers.find((p) => p.id === id);
-    if (inList) {
-      queueMicrotask(() => {
-        setViewingId(id);
-        requestView(null);
-      });
-      return;
-    }
-    fetch(`/api/providers/${encodeURIComponent(id)}`, { cache: "no-store" })
-      .then((res) => res.json())
-      .then((json) => {
-        if (json?.success && json.data) {
-          setFetched(mapToProvider(json.data as BackendProvider));
-          setViewingId(id);
-        }
-      })
-      .catch(() => undefined)
-      .finally(() => requestView(null));
-  }, [viewRequest, providers, requestView]);
+  const openDetails = (id: string) => router.push(`/providers/${stage.slug}/${id}`);
+  const openEdit = (id: string) => router.push(`/providers/${stage.slug}/${id}/edit`);
 
   async function runAction(id: string, action: () => Promise<void>, fallback: string) {
     setActionError(null);
@@ -133,10 +107,8 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
   const clearFilters = () => setFilters((f) => ({ ...defaultProviderFilters, sort: f.sort }));
   const filtersActive = chips.length > 0 || query.trim() !== "";
 
-  const viewingProvider = viewingId ? byId.get(viewingId) : undefined;
-  const rejectingProvider = rejectingId ? byId.get(rejectingId) : undefined;
-  const editingProvider = editingId ? byId.get(editingId) : undefined;
-  const deletingProvider = deletingId ? byId.get(deletingId) : undefined;
+  const rejectingProvider = providers.find((p) => p.id === rejectingId);
+  const deletingProvider = providers.find((p) => p.id === deletingId);
 
   return (
     <Card>
@@ -256,10 +228,10 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                     // and from the row's own buttons.
                     const target = e.target as HTMLElement;
                     if (!e.currentTarget.contains(target) || target.closest("button, a")) return;
-                    setViewingId(p.id);
+                    openDetails(p.id);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && e.target === e.currentTarget) setViewingId(p.id);
+                    if (e.key === "Enter" && e.target === e.currentTarget) openDetails(p.id);
                   }}
                   className="group animate-fade-in cursor-pointer border-b border-border align-middle transition-colors last:border-0 hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none"
                 >
@@ -354,11 +326,11 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                         canVerify={p.status === "pending"}
                         canApprove={p.status === "verification"}
                         busy={busy}
-                        onView={() => setViewingId(p.id)}
+                        onView={() => openDetails(p.id)}
                         onVerify={() => handleVerify(p.id)}
                         onApprove={() => handleApprove(p.id)}
                         onReject={() => setRejectingId(p.id)}
-                        onEdit={() => setEditingId(p.id)}
+                        onEdit={() => openEdit(p.id)}
                         onDelete={() => setDeletingId(p.id)}
                       />
                     </div>
@@ -431,34 +403,13 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
         )}
       </div>
 
-      {viewingProvider && (
-        <ProviderDetailModal
-          provider={viewingProvider}
-          onClose={() => setViewingId(null)}
-          onVerify={handleVerify}
-          onApprove={handleApprove}
-          onReject={handleReject}
-        />
-      )}
-
-      {rejectingProvider && !viewingProvider && (
+      {rejectingProvider && (
         <RejectModal
           providerName={rejectingProvider.fullName}
           onCancel={() => setRejectingId(null)}
           onConfirm={(reason) => {
             handleReject(rejectingProvider.id, reason);
             setRejectingId(null);
-          }}
-        />
-      )}
-
-      {editingProvider && (
-        <EditProviderModal
-          provider={editingProvider}
-          onClose={() => setEditingId(null)}
-          onSave={async (...args: Parameters<typeof update>) => {
-            await update(...args);
-            refresh();
           }}
         />
       )}

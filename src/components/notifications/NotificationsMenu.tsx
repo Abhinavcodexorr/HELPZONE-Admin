@@ -8,12 +8,10 @@ import { ShimmerImage } from "@/components/ui/ShimmerImage";
 import { stageForStatus } from "@/lib/provider-stages";
 import { cn, initials, timeAgo } from "@/lib/utils";
 import { useNotifications, type NotificationItem } from "@/store/NotificationsContext";
-import { useProviders } from "@/store/ProvidersContext";
 
 export function NotificationsMenu() {
   const router = useRouter();
   const { items, unreadCount, isUnread, markRead, markAllRead } = useNotifications();
-  const { requestView } = useProviders();
   const [open, setOpen] = useState(false);
   const [ringKey, setRingKey] = useState(0);
   const [now, setNow] = useState(() => Date.now());
@@ -53,9 +51,8 @@ export function NotificationsMenu() {
 
   function openItem(item: NotificationItem) {
     markRead(item.id);
-    requestView(item.id);
     setOpen(false);
-    router.push(`/providers/${stageForStatus(item.applicationStatus)?.slug ?? "new"}`);
+    router.push(`/providers/${stageForStatus(item.applicationStatus)?.slug ?? "new"}/${item.id}`);
   }
 
   return (

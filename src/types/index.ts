@@ -103,6 +103,8 @@ export interface Provider {
   introVideoUrl: string;
   /** Still frame of the intro video, made by the backend ("" if not available). */
   introVideoThumbnailUrl: string;
+  /** How far (km) the provider will travel for work; null = not set. */
+  serviceRadiusKm: number | null;
   profileComplete: boolean;
   isActive: boolean;
   submittedAt: string;
@@ -138,14 +140,11 @@ export interface UpdateProviderInput {
   nationality: string;
   categoryIds: string[];
   city: string;
+  state: string;
   mobileNumber: string;
   whatsappNumber: string;
-  email: string;
-  experienceYears: number;
-  kyc: {
-    idType: string;
-    idNumber: string;
-  };
+  /** How far (km) the provider will travel for work; null = not set. */
+  serviceRadiusKm: number | null;
 }
 
 // A catalog entry managed under Services. Providers reference it by `key`
