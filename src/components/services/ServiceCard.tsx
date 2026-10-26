@@ -31,7 +31,12 @@ export function ServiceCard({
             active ? "bg-primary-soft text-primary ring-primary/15" : "bg-surface-3 text-subtle ring-border",
           )}
         >
-          <ServiceIcon name={service.icon} label={service.name} className="h-6 w-6 text-lg" />
+          {service.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={service.imageUrl} alt={service.name} className="h-full w-full rounded-2xl object-cover" />
+          ) : (
+            <ServiceIcon name={service.icon} label={service.name} className="h-6 w-6 text-lg" />
+          )}
         </span>
         <Badge tone={active ? "green" : "gray"} dot>
           {active ? "Active" : "Inactive"}

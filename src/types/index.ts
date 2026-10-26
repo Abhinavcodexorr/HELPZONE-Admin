@@ -165,6 +165,7 @@ export interface Service {
   name: string;
   description: string;
   icon?: string;
+  imageUrl?: string;
   isActive: boolean;
   subCategories?: SubCategory[];
   providerCount: number;
@@ -184,6 +185,7 @@ export interface ServiceInput {
   name: string;
   description: string;
   icon: string;
+  imageUrl: string;
   /** Full list on every save; entries that exist already must keep their `key`. */
   subCategories?: { key?: string; name: string; isActive: boolean }[];
   isActive?: boolean;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
+import { ImagePlus, Plus, X } from "lucide-react";
 import type { Service, ServiceInput, SubCategory } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,8 @@ export function ServiceFormModal({
   const [name, setName] = useState(service?.name ?? presetName ?? "");
   const [description, setDescription] = useState(service?.description ?? "");
   const [icon, setIcon] = useState(service?.icon ?? "");
+  const [imageUrl, setImageUrl] = useState(service?.imageUrl ?? "");
+  const [uploading, setUploading] = useState(false);
   const [subs, setSubs] = useState<SubCategory[]>(service?.subCategories ?? []);
   const [subDraft, setSubDraft] = useState("");
   const [isActive, setIsActive] = useState(service?.isActive ?? true);
@@ -44,6 +46,7 @@ export function ServiceFormModal({
     trimmed === service!.name &&
     description.trim() === service!.description &&
     icon === (service!.icon ?? "") &&
+    imageUrl === (service!.imageUrl ?? "") &&
     JSON.stringify(subs.map((s) => [s.name, s.isActive])) ===
       JSON.stringify((service!.subCategories ?? []).map((s) => [s.name, s.isActive]));
 
@@ -59,6 +62,24 @@ export function ServiceFormModal({
       return next;
     });
     setSubDraft("");
+  }
+
+  async function handleImage(file?: File) {
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const body = new FormData();
+      body.append("image", file);
+      const res = await fetch("/api/upload", { method: "POST", body });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) throw new Error(data.message || "Image upload failed");
+      setImageUrl(data.url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Image upload failed");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -82,6 +103,7 @@ export function ServiceFormModal({
         name: trimmed,
         description: description.trim(),
         icon,
+        imageUrl,
         subCategories: subs.map((s) => ({ ...(s.key && { key: s.key }), name: s.name, isActive: s.isActive })),
         ...(editing ? {} : { isActive, ...(presetKey && { key: presetKey }) }),
       });
@@ -215,6 +237,40 @@ export function ServiceFormModal({
 
           <div>
             <span className="mb-2 block text-xs font-medium text-fg-2">
+              Image <span className="font-normal text-subtle">(optional · shown in the apps instead of the icon)</span>
+            </span>
+            <div className="flex items-center gap-3">
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-2 ring-1 ring-border">
+                {imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <ImagePlus className="h-5 w-5 text-subtle" />
+                )}
+              </span>
+              <label className="cursor-pointer rounded-lg border border-border px-3 py-2 text-xs font-medium text-fg-2 hover:bg-surface-2">
+                {uploading ? "Uploading…" : imageUrl ? "Change image" : "Upload image"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploading || saving}
+                  onChange={(e) => {
+                    handleImage(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {imageUrl && (
+                <button type="button" onClick={() => setImageUrl("")} className="text-xs text-danger hover:underline">
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <span className="mb-2 block text-xs font-medium text-fg-2">
               Icon <span className="font-normal text-subtle">(optional · tap again to remove)</span>
             </span>
             <div className="grid grid-cols-6 gap-1.5" role="radiogroup" aria-label="Icon">
@@ -266,7 +322,7 @@ export function ServiceFormModal({
           <Button type="button" variant="secondary" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button type="submit" disabled={saving || unchanged || !trimmed}>
+          <Button type="submit" disabled={saving || uploading || unchanged || !trimmed}>
             {saving ? "Saving…" : editing ? "Save changes" : "Add service"}
           </Button>
         </div>
