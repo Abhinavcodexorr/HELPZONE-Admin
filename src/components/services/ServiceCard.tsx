@@ -24,24 +24,34 @@ export function ServiceCard({
 
   return (
     <Card className={cn("group flex flex-col p-5 transition-shadow hover:shadow-md", !active && "bg-surface-2/60")}>
-      <div className="flex items-start justify-between gap-3">
-        <span
-          className={cn(
-            "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 transition-colors",
-            active ? "bg-primary-soft text-primary ring-primary/15" : "bg-surface-3 text-subtle ring-border",
-          )}
-        >
-          {service.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={service.imageUrl} alt={service.name} className="h-full w-full rounded-2xl object-cover" />
-          ) : (
+      {service.imageUrl ? (
+        // Full-width cover picture; the status badge sits on top of it.
+        <div className="relative -mx-5 -mt-5 mb-1 aspect-[16/9] overflow-hidden rounded-t-xl bg-surface-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={service.imageUrl}
+            alt={service.name}
+            className={cn("h-full w-full object-cover transition-transform duration-500 group-hover:scale-105", !active && "grayscale")}
+          />
+          <Badge tone={active ? "green" : "gray"} dot className="absolute right-3 top-3 shadow-sm">
+            {active ? "Active" : "Inactive"}
+          </Badge>
+        </div>
+      ) : (
+        <div className="flex items-start justify-between gap-3">
+          <span
+            className={cn(
+              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 transition-colors",
+              active ? "bg-primary-soft text-primary ring-primary/15" : "bg-surface-3 text-subtle ring-border",
+            )}
+          >
             <ServiceIcon name={service.icon} label={service.name} className="h-6 w-6 text-lg" />
-          )}
-        </span>
-        <Badge tone={active ? "green" : "gray"} dot>
-          {active ? "Active" : "Inactive"}
-        </Badge>
-      </div>
+          </span>
+          <Badge tone={active ? "green" : "gray"} dot>
+            {active ? "Active" : "Inactive"}
+          </Badge>
+        </div>
+      )}
 
       <h3 className={cn("mt-4 text-base font-semibold", active ? "text-foreground" : "text-muted")}>{service.name}</h3>
       <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm text-muted">
