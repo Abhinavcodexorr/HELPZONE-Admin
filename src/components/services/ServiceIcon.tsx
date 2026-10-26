@@ -42,8 +42,6 @@ const icons: Record<string, { icon: LucideIcon; label: string }> = {
   "shield-check": { icon: ShieldCheck, label: "Security" },
 };
 
-export const serviceIconOptions = Object.entries(icons).map(([value, { label }]) => ({ value, label }));
-
 /** The service's icon, or its first letter when no icon was chosen (icons are optional). */
 export function ServiceIcon({ name, label, className }: { name?: string; label?: string; className?: string }) {
   const entry = name ? icons[name] : undefined;

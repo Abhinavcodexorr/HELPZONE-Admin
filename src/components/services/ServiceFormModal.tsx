@@ -6,7 +6,7 @@ import type { Service, ServiceInput, SubCategory } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { keyFromName } from "@/lib/services";
-import { ServiceIcon, serviceIconOptions } from "./ServiceIcon";
+import { ServiceIcon } from "./ServiceIcon";
 
 const inputClass =
   "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-2 placeholder:text-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
@@ -30,7 +30,6 @@ export function ServiceFormModal({
   const editing = Boolean(service);
   const [name, setName] = useState(service?.name ?? presetName ?? "");
   const [description, setDescription] = useState(service?.description ?? "");
-  const [icon, setIcon] = useState(service?.icon ?? "");
   const [imageUrl, setImageUrl] = useState(service?.imageUrl ?? "");
   const [uploading, setUploading] = useState(false);
   const [subs, setSubs] = useState<SubCategory[]>(service?.subCategories ?? []);
@@ -45,7 +44,6 @@ export function ServiceFormModal({
     editing &&
     trimmed === service!.name &&
     description.trim() === service!.description &&
-    icon === (service!.icon ?? "") &&
     imageUrl === (service!.imageUrl ?? "") &&
     JSON.stringify(subs.map((s) => [s.name, s.isActive])) ===
       JSON.stringify((service!.subCategories ?? []).map((s) => [s.name, s.isActive]));
@@ -102,7 +100,6 @@ export function ServiceFormModal({
       await onSubmit({
         name: trimmed,
         description: description.trim(),
-        icon,
         imageUrl,
         subCategories: subs.map((s) => ({ ...(s.key && { key: s.key }), name: s.name, isActive: s.isActive })),
         ...(editing ? {} : { isActive, ...(presetKey && { key: presetKey }) }),
@@ -133,7 +130,7 @@ export function ServiceFormModal({
 
         <div className="flex items-center gap-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary">
-            <ServiceIcon name={icon} label={name} className="h-5 w-5 text-base" />
+            <ServiceIcon name={service?.icon} label={name} className="h-5 w-5 text-base" />
           </span>
           <div>
             <h3 className="text-base font-semibold text-foreground">{editing ? "Edit service" : "Add service"}</h3>
@@ -144,6 +141,40 @@ export function ServiceFormModal({
         </div>
 
         <div className="mt-5 space-y-4">
+          <div>
+            <span className="mb-2 block text-xs font-medium text-fg-2">
+              Image <span className="font-normal text-subtle">(optional)</span>
+            </span>
+            <div className="flex items-center gap-3">
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-2 ring-1 ring-border">
+                {imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <ImagePlus className="h-5 w-5 text-subtle" />
+                )}
+              </span>
+              <label className="cursor-pointer rounded-lg border border-border px-3 py-2 text-xs font-medium text-fg-2 hover:bg-surface-2">
+                {uploading ? "Uploading…" : imageUrl ? "Change image" : "Upload image"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploading || saving}
+                  onChange={(e) => {
+                    handleImage(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {imageUrl && (
+                <button type="button" onClick={() => setImageUrl("")} className="text-xs text-danger hover:underline">
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-fg-2">Service name</span>
             <input
@@ -232,67 +263,6 @@ export function ServiceFormModal({
               <Button type="button" variant="secondary" size="sm" onClick={addSubs} disabled={!subDraft.trim()}>
                 <Plus className="h-3.5 w-3.5" /> Add
               </Button>
-            </div>
-          </div>
-
-          <div>
-            <span className="mb-2 block text-xs font-medium text-fg-2">
-              Image <span className="font-normal text-subtle">(optional · shown in the apps instead of the icon)</span>
-            </span>
-            <div className="flex items-center gap-3">
-              <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-2 ring-1 ring-border">
-                {imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={imageUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <ImagePlus className="h-5 w-5 text-subtle" />
-                )}
-              </span>
-              <label className="cursor-pointer rounded-lg border border-border px-3 py-2 text-xs font-medium text-fg-2 hover:bg-surface-2">
-                {uploading ? "Uploading…" : imageUrl ? "Change image" : "Upload image"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  disabled={uploading || saving}
-                  onChange={(e) => {
-                    handleImage(e.target.files?.[0]);
-                    e.target.value = "";
-                  }}
-                />
-              </label>
-              {imageUrl && (
-                <button type="button" onClick={() => setImageUrl("")} className="text-xs text-danger hover:underline">
-                  Remove
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <span className="mb-2 block text-xs font-medium text-fg-2">
-              Icon <span className="font-normal text-subtle">(optional · tap again to remove)</span>
-            </span>
-            <div className="grid grid-cols-6 gap-1.5" role="radiogroup" aria-label="Icon">
-              {serviceIconOptions.map(({ value, label }) => (
-                <button
-                  key={value}
-                  type="button"
-                  role="radio"
-                  aria-checked={icon === value}
-                  aria-label={label}
-                  title={label}
-                  onClick={() => setIcon(icon === value ? "" : value)}
-                  className={cn(
-                    "flex h-10 items-center justify-center rounded-lg ring-1 transition active:scale-90",
-                    icon === value
-                      ? "bg-primary-soft text-primary ring-2 ring-primary"
-                      : "bg-surface text-muted ring-border hover:bg-surface-2 hover:text-foreground",
-                  )}
-                >
-                  <ServiceIcon name={value} className="h-[18px] w-[18px]" />
-                </button>
-              ))}
             </div>
           </div>
 
