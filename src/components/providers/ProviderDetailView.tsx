@@ -75,15 +75,16 @@ function InfoCard({
   );
 }
 
+const isEmpty = (v: unknown) => v === undefined || v === null || v === "" || v === "—" || (Array.isArray(v) && v.length === 0);
+
 /* ── Single row inside a card ───────────────────────── */
 function Row({ label, value }: { label: string; value?: ReactNode }) {
-  const empty = value === undefined || value === null || value === "" || value === "—";
+  // Fields the backend didn't send (or sent empty) are simply not shown.
+  if (isEmpty(value)) return null;
   return (
     <div className="flex items-start gap-3 py-2.5 border-b border-border last:border-0">
       <span className="min-w-[130px] text-xs font-medium text-muted shrink-0">{label}</span>
-      <span className={`text-sm break-words leading-snug ${empty ? "text-subtle italic" : "font-semibold text-foreground"}`}>
-        {empty ? "Not provided" : value}
-      </span>
+      <span className="text-sm break-words font-semibold leading-snug text-foreground">{value}</span>
     </div>
   );
 }
@@ -155,6 +156,8 @@ export function ProviderDetailView({
   const [videoOpen, setVideoOpen] = useState(false);
   const p = provider;
 
+  // Only documents that actually have a file are shown.
+  const docs = p.documents.filter((d) => d.image);
   const phoneOk = p.mobileNumber !== "—";
   const waDigits = digitsOnly(p.whatsappNumber === "—" ? "" : p.whatsappNumber);
   const waNumber = waDigits.length === 10 ? `91${waDigits}` : waDigits;
@@ -246,16 +249,7 @@ export function ProviderDetailView({
                 >
                   <Icon className="h-[18px] w-[18px]" />
                 </a>
-              ) : (
-                <span
-                  key={label}
-                  title={`${label} number not available`}
-                  aria-label={`${label} unavailable`}
-                  className="flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-full bg-surface-3 text-subtle opacity-60 ring-1 ring-border"
-                >
-                  <Icon className="h-[18px] w-[18px]" />
-                </span>
-              )
+              ) : null
             )}
           </div>
 
@@ -289,37 +283,43 @@ export function ProviderDetailView({
           </InfoCard>
 
           {/* ── CONTACT & LOCATION ── */}
+          {[p.mobileNumber, p.city, p.state, p.emirate].some((v) => !isEmpty(v)) && (
           <InfoCard icon={MapPin} iconBg="bg-success-soft text-success" title="📍 Contact & Location">
             <Row label="Mobile Number" value={p.mobileNumber} />
             <Row label="City" value={p.city} />
             <Row label="State" value={p.state} />
-            {p.emirate && <Row label="Emirate" value={p.emirate} />}
+            <Row label="Emirate" value={p.emirate} />
           </InfoCard>
+          )}
 
           {/* ── WORK PROFILE ── */}
-          <InfoCard icon={Briefcase} iconBg="bg-accent-soft text-accent" title="💼 Work Profile">
-            <div className="flex items-start gap-3 py-2.5 border-b border-border">
-              <span className="min-w-[130px] text-xs font-medium text-muted shrink-0">Job Categories</span>
-              <ChipList items={p.categories} tone="indigo" />
-            </div>
-            <div className="flex items-start gap-3 py-2.5 border-b border-border">
-              <span className="flex min-w-[130px] shrink-0 items-center gap-1 text-xs font-medium text-muted">
-                <Radar className="h-3 w-3" /> Service Radius
-              </span>
-              <span className="text-sm font-semibold text-foreground">
-                {p.serviceRadiusKm ? `Within ${p.serviceRadiusKm} km` : <span className="font-normal text-subtle">Not set</span>}
-              </span>
-            </div>
-            {p.jobDescription && (
-              <div className="mt-3 rounded-xl bg-surface-2 p-3 text-sm text-foreground leading-relaxed ring-1 ring-border">
-                <p className="text-xs font-medium text-muted mb-1">📝 Job Description</p>
-                {p.jobDescription}
-              </div>
-            )}
-          </InfoCard>
+          {(p.categories.length > 0 || p.serviceRadiusKm || p.jobDescription) && (
+            <InfoCard icon={Briefcase} iconBg="bg-accent-soft text-accent" title="💼 Work Profile">
+              {p.categories.length > 0 && (
+                <div className="flex items-start gap-3 py-2.5 border-b border-border last:border-0">
+                  <span className="min-w-[130px] text-xs font-medium text-muted shrink-0">Job Categories</span>
+                  <ChipList items={p.categories} tone="indigo" />
+                </div>
+              )}
+              {p.serviceRadiusKm ? (
+                <div className="flex items-start gap-3 py-2.5 border-b border-border last:border-0">
+                  <span className="flex min-w-[130px] shrink-0 items-center gap-1 text-xs font-medium text-muted">
+                    <Radar className="h-3 w-3" /> Service Radius
+                  </span>
+                  <span className="text-sm font-semibold text-foreground">Within {p.serviceRadiusKm} km</span>
+                </div>
+              ) : null}
+              {p.jobDescription && (
+                <div className="mt-3 rounded-xl bg-surface-2 p-3 text-sm text-foreground leading-relaxed ring-1 ring-border">
+                  <p className="text-xs font-medium text-muted mb-1">📝 Job Description</p>
+                  {p.jobDescription}
+                </div>
+              )}
+            </InfoCard>
+          )}
 
           {/* ── LAST JOB ── */}
-          {p.lastJob && (
+          {p.lastJob && Object.values(p.lastJob).some((v) => !isEmpty(v)) && (
             <InfoCard icon={History} iconBg="bg-warning-soft text-warning" title="🕐 Previous Work Experience">
               <Row label="Job Title" value={p.lastJob.jobTitle} />
               <Row
@@ -342,18 +342,15 @@ export function ProviderDetailView({
           )}
 
           {/* ── IDENTITY DOCUMENTS ── */}
+          {docs.length > 0 && (
           <InfoCard icon={IdCard} iconBg="bg-danger-soft text-danger" title="🪪 Identity & Documents">
-            {p.documents.length === 0 ? (
-              <div className="flex h-24 items-center justify-center rounded-xl border-2 border-dashed border-border text-sm text-subtle">
-                No identity documents submitted
-              </div>
-            ) : (
+            {(
               <div className="space-y-4">
-                {p.documents.map((doc, i) => (
+                {docs.map((doc, i) => (
                   <div key={`${doc.type}-${i}`} className="rounded-xl bg-surface-2 p-3.5 ring-1 ring-border">
                     <div className="flex items-center justify-between gap-2">
                       <span className="rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary">{doc.type}</span>
-                      <span className="text-[11px] text-subtle">Document {i + 1} of {p.documents.length}</span>
+                      <span className="text-[11px] text-subtle">Document {i + 1} of {docs.length}</span>
                     </div>
                     <div className="mt-3">
                       {!doc.image ? (
@@ -402,8 +399,10 @@ export function ProviderDetailView({
               </div>
             )}
           </InfoCard>
+          )}
 
           {/* ── INTRO VIDEO ── */}
+          {p.introVideoUrl && (
           <InfoCard icon={VideoOff} iconBg="bg-neutral-soft text-neutral" title="🎥 Intro Video">
             {p.introVideoUrl && (p.introVideoThumbnailUrl || !videoFailed) ? (
               <button
@@ -449,13 +448,9 @@ export function ProviderDetailView({
                 <ExternalLink className="h-5 w-5" />
                 Open video in new tab
               </a>
-            ) : (
-              <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border text-sm text-subtle bg-surface-2">
-                <VideoOff className="h-6 w-6" />
-                No intro video uploaded
-              </div>
-            )}
+            ) : null}
           </InfoCard>
+          )}
 
           {/* ── APPLICATION INFO ── */}
           <InfoCard icon={ShieldCheck} iconBg="bg-primary-soft text-primary" title="📋 Application Info">

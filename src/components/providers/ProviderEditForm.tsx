@@ -46,9 +46,9 @@ export function ProviderEditForm({
   onSave: (input: UpdateProviderInput) => Promise<void>;
 }) {
   const orEmpty = (v: string) => (v === "—" ? "" : v);
-  const [form, setForm] = useState<UpdateProviderInput>({
+  const [form, setForm] = useState<Omit<UpdateProviderInput, "gender"> & { gender: "Male" | "Female" | "" }>({
     fullName: provider.fullName === "Unnamed provider" ? "" : provider.fullName,
-    gender: provider.gender === "Male" ? "Male" : "Female",
+    gender: provider.gender,
     nationality: orEmpty(provider.nationality),
     categoryIds: provider.categoryIds,
     city: orEmpty(provider.city),
@@ -59,7 +59,7 @@ export function ProviderEditForm({
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const set = <K extends keyof UpdateProviderInput>(key: K, value: UpdateProviderInput[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((f) => ({ ...f, [key]: value }));
 
   // Services from the catalog, plus any key this provider already has that isn't in it.
   const known = new Set(services.map((s) => s.key));
@@ -78,7 +78,7 @@ export function ProviderEditForm({
     setSaving(true);
     setError(null);
     try {
-      await onSave({ ...form, fullName: form.fullName.trim() });
+      await onSave({ ...form, gender: form.gender || undefined, fullName: form.fullName.trim() });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save changes");
       setSaving(false);
@@ -107,7 +107,8 @@ export function ProviderEditForm({
             </Field>
           </div>
           <Field label="Gender">
-            <select className={inputClass} value={form.gender} onChange={(e) => set("gender", e.target.value as "Male" | "Female")}>
+            <select className={inputClass} value={form.gender} onChange={(e) => set("gender", e.target.value as "Male" | "Female" | "")}>
+              <option value="">Not set</option>
               <option value="Female">Female</option>
               <option value="Male">Male</option>
             </select>

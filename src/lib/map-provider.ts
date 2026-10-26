@@ -102,7 +102,7 @@ export function mapToProvider(provider: BackendProvider): Provider {
     id: provider.id,
     // Phone-only signups have no name until they finish their profile.
     fullName: provider.fullName?.trim() || "Unnamed provider",
-    gender: provider.gender === "Male" ? "Male" : "Female",
+    gender: provider.gender === "Male" || provider.gender === "Female" ? provider.gender : "",
     nationality: provider.nationality || "—",
     avatarColor: colorForId(provider.id),
     categoryIds,

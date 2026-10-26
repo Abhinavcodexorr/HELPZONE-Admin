@@ -73,7 +73,8 @@ export interface LastJob {
 export interface Provider {
   id: string;
   fullName: string;
-  gender: "Male" | "Female";
+  /** "" when the provider hasn't given one. */
+  gender: "Male" | "Female" | "";
   nationality: string;
   avatarColor: string;
   categories: string[];
@@ -136,7 +137,7 @@ export interface ProviderDocument {
 
 export interface UpdateProviderInput {
   fullName: string;
-  gender: "Male" | "Female";
+  gender?: "Male" | "Female";
   nationality: string;
   categoryIds: string[];
   city: string;

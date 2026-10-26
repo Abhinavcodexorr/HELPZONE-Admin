@@ -97,6 +97,17 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
     runAction(id, () => reject(id, reason), "Failed to reject provider");
 
   const stageTotal = counts?.[status] ?? 0;
+
+  // A column nobody on this page has data for is hidden; while loading (or with no rows) all stay so the skeleton lines up.
+  const showAll = loading || providers.length === 0;
+  const col = {
+    services: showAll || providers.some((p) => p.categories.length > 0),
+    location: showAll || providers.some((p) => p.city !== "—" || p.state),
+    aadhaar: showAll || providers.some((p) => p.kyc.idDocumentImage),
+    pan: showAll || providers.some((p) => p.panCard || p.panNumber),
+    video: showAll || providers.some((p) => p.introVideoUrl),
+  };
+  const columnCount = 6 + Object.values(col).filter(Boolean).length;
   const genderCount = (g: "Male" | "Female") => facets.gender[g] ?? 0;
 
   const chips = describeProviderFilters(filters, labelForCategory).map((c) => ({
@@ -204,11 +215,11 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
               <th className="w-20 px-4 py-3 font-medium">Profile</th>
               <th className="min-w-[160px] px-4 py-3 font-medium">Name</th>
               <th className="min-w-[190px] px-4 py-3 font-medium">Contact</th>
-              <th className="min-w-[150px] px-4 py-3 font-medium">Services</th>
-              <th className="min-w-[120px] px-4 py-3 font-medium">Location</th>
-              <th className="min-w-[190px] px-4 py-3 font-medium">Aadhaar</th>
-              <th className="min-w-[190px] px-4 py-3 font-medium">PAN</th>
-              <th className="min-w-[150px] px-4 py-3 font-medium">Video</th>
+              {col.services && <th className="min-w-[150px] px-4 py-3 font-medium">Services</th>}
+              {col.location && <th className="min-w-[120px] px-4 py-3 font-medium">Location</th>}
+              {col.aadhaar && <th className="min-w-[190px] px-4 py-3 font-medium">Aadhaar</th>}
+              {col.pan && <th className="min-w-[190px] px-4 py-3 font-medium">PAN</th>}
+              {col.video && <th className="min-w-[150px] px-4 py-3 font-medium">Video</th>}
               <th className="min-w-[130px] px-4 py-3 font-medium">Status</th>
               <th className="min-w-[110px] px-4 py-3 text-right font-medium">Actions</th>
             </tr>
@@ -253,22 +264,25 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                       {p.fullName}
                     </p>
                     <p className="whitespace-nowrap text-xs text-muted">
-                      {p.gender} &middot; {p.nationality}
+                      {[p.gender, p.nationality !== "—" ? p.nationality : ""].filter(Boolean).join(" · ")}
                     </p>
                   </td>
                   <td className="px-4 py-3.5">
-                    <p className="flex items-center gap-1.5 whitespace-nowrap text-fg-2">
-                      <Phone className="h-3 w-3 shrink-0 text-subtle" />
-                      {p.mobileNumber}
-                    </p>
-                    <p className="mt-0.5 max-w-[190px] truncate text-xs text-muted" title={p.email}>
-                      {p.email}
-                    </p>
+                    {p.mobileNumber !== "—" && (
+                      <p className="flex items-center gap-1.5 whitespace-nowrap text-fg-2">
+                        <Phone className="h-3 w-3 shrink-0 text-subtle" />
+                        {p.mobileNumber}
+                      </p>
+                    )}
+                    {p.email && (
+                      <p className="mt-0.5 max-w-[190px] truncate text-xs text-muted" title={p.email}>
+                        {p.email}
+                      </p>
+                    )}
                   </td>
+                  {col.services && (
                   <td className="px-4 py-3.5">
-                    {p.categories.length === 0 ? (
-                      <span className="text-xs text-subtle">No service</span>
-                    ) : (
+                    {p.categories.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {p.categories.slice(0, 2).map((c) => (
                           <Badge key={c} tone="indigo">
@@ -283,13 +297,17 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                       </div>
                     )}
                   </td>
+                  )}
+                  {col.location && (
                   <td className="px-4 py-3.5">
-                    <p className="whitespace-nowrap text-fg-2">{p.city}</p>
+                    {p.city !== "—" && <p className="whitespace-nowrap text-fg-2">{p.city}</p>}
                     {p.state && <p className="whitespace-nowrap text-xs text-muted">{p.state}</p>}
                   </td>
-                  <td className="px-4 py-3.5">
-                    <IdProofThumbnail provider={p} />
-                  </td>
+                  )}
+                  {col.aadhaar && (
+                  <td className="px-4 py-3.5">{p.kyc.idDocumentImage && <IdProofThumbnail provider={p} />}</td>
+                  )}
+                  {col.pan && (
                   <td className="px-4 py-3.5">
                     {p.panCard ? (
                       <DocumentThumbnail
@@ -299,14 +317,13 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                         idDocumentImage={p.panCard.idDocumentImage}
                       />
                     ) : (
-                      <p className="whitespace-nowrap font-mono text-xs tracking-wide text-fg-2">
-                        {p.panNumber || "—"}
-                      </p>
+                      p.panNumber && <p className="whitespace-nowrap font-mono text-xs tracking-wide text-fg-2">{p.panNumber}</p>
                     )}
                   </td>
-                  <td className="px-4 py-3.5">
-                    <VideoThumbnail provider={p} />
-                  </td>
+                  )}
+                  {col.video && (
+                  <td className="px-4 py-3.5">{p.introVideoUrl && <VideoThumbnail provider={p} />}</td>
+                  )}
                   <td className="px-4 py-3.5">
                     <Badge tone={statusTone[p.status]} dot>
                       {statusLabel[p.status]}
@@ -340,7 +357,7 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
             })}
             {!loading && !error && providers.length === 0 && (
               <tr>
-                <td colSpan={11} className="px-4 py-12 text-center text-sm text-subtle">
+                <td colSpan={columnCount} className="px-4 py-12 text-center text-sm text-subtle">
                   {filtersActive && stageTotal > 0 ? (
                     <span className="flex flex-col items-center gap-2">
                       No providers match these filters.
