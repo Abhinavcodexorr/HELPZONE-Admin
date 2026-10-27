@@ -102,7 +102,7 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
   const showAll = loading || providers.length === 0;
   const col = {
     services: showAll || providers.some((p) => p.categories.length > 0),
-    location: showAll || providers.some((p) => p.city !== "—" || p.state),
+    location: showAll || providers.some((p) => p.city !== "—" || p.state || p.area || p.pincode),
     aadhaar: showAll || providers.some((p) => p.kyc.idDocumentImage),
     pan: showAll || providers.some((p) => p.panCard || p.panNumber),
     video: showAll || providers.some((p) => p.introVideoUrl),
@@ -263,9 +263,6 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                     <p className="whitespace-nowrap font-semibold text-foreground transition-colors group-hover:text-primary">
                       {p.fullName}
                     </p>
-                    <p className="whitespace-nowrap text-xs text-muted">
-                      {[p.gender, p.nationality !== "—" ? p.nationality : ""].filter(Boolean).join(" · ")}
-                    </p>
                   </td>
                   <td className="px-4 py-3.5">
                     {p.mobileNumber !== "—" && (
@@ -301,7 +298,10 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                   {col.location && (
                   <td className="px-4 py-3.5">
                     {p.city !== "—" && <p className="whitespace-nowrap text-fg-2">{p.city}</p>}
-                    {p.state && <p className="whitespace-nowrap text-xs text-muted">{p.state}</p>}
+                    {p.area && <p className="whitespace-nowrap text-xs text-muted">{p.area}</p>}
+                    {(p.state || p.pincode) && (
+                      <p className="whitespace-nowrap text-xs text-muted">{[p.state, p.pincode].filter(Boolean).join(" · ")}</p>
+                    )}
                   </td>
                   )}
                   {col.aadhaar && (

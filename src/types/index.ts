@@ -73,6 +73,9 @@ export interface LastJob {
 export interface Provider {
   id: string;
   fullName: string;
+  /** Work area and pincode ("" when not given). */
+  area: string;
+  pincode: string;
   /** "" when the provider hasn't given one. */
   gender: "Male" | "Female" | "";
   nationality: string;
@@ -142,6 +145,8 @@ export interface UpdateProviderInput {
   categoryIds: string[];
   city: string;
   state: string;
+  area: string;
+  pincode: string;
   mobileNumber: string;
   whatsappNumber: string;
   /** How far (km) the provider will travel for work; null = not set. */

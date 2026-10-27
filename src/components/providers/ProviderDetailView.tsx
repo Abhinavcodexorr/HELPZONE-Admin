@@ -16,7 +16,6 @@ import {
   Phone,
   Radar,
   ShieldCheck,
-  User,
   VideoOff,
   X,
   ZoomIn,
@@ -207,11 +206,6 @@ export function ProviderDetailView({
           {/* Name + tags */}
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-bold text-foreground leading-tight truncate">{p.fullName}</h2>
-            <p className="text-sm text-muted mt-0.5">
-              {[p.gender, p.age ? `${p.age} yrs` : null, p.nationality !== "—" ? p.nationality : null]
-                .filter(Boolean)
-                .join(" · ")}
-            </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <Badge tone={statusTone[p.status]} dot>
                 {statusLabel[p.status]}
@@ -275,18 +269,13 @@ export function ProviderDetailView({
             </div>
           )}
 
-          {/* ── PERSONAL DETAILS ── */}
-          <InfoCard icon={User} iconBg="bg-primary-soft text-primary" title="👤 Personal Details">
-            <Row label="Full Name" value={p.fullName} />
-            <Row label="Gender" value={p.gender} />
-            <Row label="Nationality" value={p.nationality} />
-          </InfoCard>
-
           {/* ── CONTACT & LOCATION ── */}
-          {[p.mobileNumber, p.city, p.state, p.emirate].some((v) => !isEmpty(v)) && (
+          {[p.mobileNumber, p.city, p.area, p.pincode, p.state, p.emirate].some((v) => !isEmpty(v)) && (
           <InfoCard icon={MapPin} iconBg="bg-success-soft text-success" title="📍 Contact & Location">
             <Row label="Mobile Number" value={p.mobileNumber} />
             <Row label="City" value={p.city} />
+            <Row label="Area" value={p.area} />
+            <Row label="Pincode" value={p.pincode} />
             <Row label="State" value={p.state} />
             <Row label="Emirate" value={p.emirate} />
           </InfoCard>

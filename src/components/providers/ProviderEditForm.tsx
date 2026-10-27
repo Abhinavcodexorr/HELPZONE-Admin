@@ -53,6 +53,8 @@ export function ProviderEditForm({
     categoryIds: provider.categoryIds,
     city: orEmpty(provider.city),
     state: provider.state,
+    area: provider.area,
+    pincode: provider.pincode,
     mobileNumber: orEmpty(provider.mobileNumber),
     whatsappNumber: orEmpty(provider.whatsappNumber),
     serviceRadiusKm: provider.serviceRadiusKm,
@@ -129,6 +131,12 @@ export function ProviderEditForm({
           </Field>
           <Field label="City">
             <input className={inputClass} value={form.city} onChange={(e) => set("city", e.target.value)} />
+          </Field>
+          <Field label="Area">
+            <input className={inputClass} value={form.area} onChange={(e) => set("area", e.target.value)} />
+          </Field>
+          <Field label="Pincode">
+            <input className={inputClass} value={form.pincode} onChange={(e) => set("pincode", e.target.value)} inputMode="numeric" maxLength={10} />
           </Field>
           <Field label="State">
             <input className={inputClass} value={form.state} onChange={(e) => set("state", e.target.value)} />

@@ -12,6 +12,8 @@ export interface BackendProvider {
   categoryId?: string;
   city?: string;
   state?: string;
+  area?: string;
+  pincode?: string;
   mobileNumber?: string;
   whatsappNumber?: string;
   age?: number;
@@ -109,6 +111,8 @@ export function mapToProvider(provider: BackendProvider): Provider {
     categories: [...new Set(categoryIds.map(labelForCategory))],
     city: provider.city || "—",
     state: provider.state || "",
+    area: provider.area || "",
+    pincode: provider.pincode || "",
     mobileNumber: provider.mobileNumber || "—",
     whatsappNumber: provider.whatsappNumber || "—",
     email: provider.email ?? "",
