@@ -222,10 +222,17 @@ export function ProviderCard({
               <TextAction icon={Trash2} label="Delete" tone="danger" onClick={onDelete} />
             </div>
           ) : p.status === "verification" ? (
-            // In verification: only the decision.
-            <div className="flex items-center gap-2">
-              <TextAction icon={Check} label="Approve" tone="success" onClick={onApprove} disabled={busy} />
-              <TextAction icon={X} label="Reject" tone="danger" onClick={onReject} disabled={busy} />
+            // In verification: the decision, plus view, edit and delete.
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2">
+                <TextAction icon={Check} label="Approve" tone="success" onClick={onApprove} disabled={busy} />
+                <TextAction icon={X} label="Reject" tone="danger" onClick={onReject} disabled={busy} />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <SecondaryAction icon={Eye} label="View" title="View details" onClick={onOpen} />
+                <SecondaryAction icon={Pencil} label="Edit" title="Edit provider" onClick={onEdit} />
+                <SecondaryAction icon={Trash2} label="Delete" title="Delete provider" tone="danger" onClick={onDelete} />
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-2">
