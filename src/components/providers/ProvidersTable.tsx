@@ -65,9 +65,25 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
   }
 
   const handleVerify = (id: string) => runAction(id, () => verify(id), "Failed to start verification");
-  const handleApprove = (id: string) => runAction(id, () => approve(id), "Failed to approve provider");
+  // The backend only allows approve/reject from "In verification", so a new request is moved there first.
+  const handleApprove = (id: string) =>
+    runAction(
+      id,
+      async () => {
+        if (providers.find((p) => p.id === id)?.status === "pending") await verify(id);
+        await approve(id);
+      },
+      "Failed to approve provider",
+    );
   const handleReject = (id: string, reason: string) =>
-    runAction(id, () => reject(id, reason), "Failed to reject provider");
+    runAction(
+      id,
+      async () => {
+        if (providers.find((p) => p.id === id)?.status === "pending") await verify(id);
+        await reject(id, reason);
+      },
+      "Failed to reject provider",
+    );
 
   const stageTotal = counts?.[status] ?? 0;
 
@@ -160,7 +176,7 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(270px,1fr))] gap-4 p-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <ProviderCardSkeleton key={i} />
           ))}
@@ -188,7 +204,7 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
           </div>
         )
       ) : (
-        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(270px,1fr))] gap-4 p-4">
           {providers.map((p, index) => (
             <ProviderCard
               key={p.id}

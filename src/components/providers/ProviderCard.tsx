@@ -37,33 +37,59 @@ const toneClass = {
   danger: "bg-surface text-danger ring-danger/25 hover:bg-danger-soft",
 } as const;
 
-/** A round icon-only action with a tooltip. */
-function IconAction({
+/** View / Edit / Delete: icon + short label, equal width, so they stay clear at every card size. */
+function SecondaryAction({
+  icon: Icon,
+  label,
+  title,
+  onClick,
+  tone = "neutral",
+}: {
+  icon: LucideIcon;
+  label: string;
+  title: string;
+  onClick: () => void;
+  tone?: keyof typeof toneClass;
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      className={cn("flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-xl text-xs font-semibold ring-1 transition active:scale-95", toneClass[tone])}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="truncate">{label}</span>
+    </button>
+  );
+}
+
+/** An icon + text action (used for the review steps: Verify, Approve, Reject). */
+function TextAction({
   icon: Icon,
   label,
   onClick,
-  tone = "neutral",
+  tone,
   disabled,
 }: {
   icon: LucideIcon;
   label: string;
   onClick: () => void;
-  tone?: keyof typeof toneClass;
+  tone: keyof typeof toneClass;
   disabled?: boolean;
 }) {
   return (
     <button
       type="button"
-      title={label}
-      aria-label={label}
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex h-9 w-9 items-center justify-center rounded-full ring-1 transition active:scale-90 disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl px-2 text-xs font-semibold ring-1 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50",
         toneClass[tone],
       )}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{label}</span>
     </button>
   );
 }
@@ -187,20 +213,18 @@ export function ProviderCard({
         {/* Pushes the footer to the bottom so every card in a row is the same height. */}
         <div className="flex-1" />
 
-        <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3.5">
-          <div className="flex items-center gap-1.5">
-            {p.status === "pending" && <IconAction icon={ShieldCheck} label="Verify" tone="primary" onClick={onVerify} disabled={busy} />}
-            {p.status === "verification" && (
-              <>
-                <IconAction icon={Check} label="Approve" tone="success" onClick={onApprove} disabled={busy} />
-                <IconAction icon={X} label="Reject" tone="danger" onClick={onReject} disabled={busy} />
-              </>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <IconAction icon={Eye} label="View details" onClick={onOpen} />
-            <IconAction icon={Pencil} label="Edit" onClick={onEdit} />
-            <IconAction icon={Trash2} label="Delete" tone="danger" onClick={onDelete} />
+        <div className="mt-4 space-y-2.5 border-t border-border pt-3.5">
+          {(p.status === "pending" || p.status === "verification") && (
+            <div className="flex items-center gap-2">
+              {p.status === "pending" && <TextAction icon={ShieldCheck} label="Verify" tone="primary" onClick={onVerify} disabled={busy} />}
+              <TextAction icon={Check} label="Approve" tone="success" onClick={onApprove} disabled={busy} />
+              <TextAction icon={X} label="Reject" tone="danger" onClick={onReject} disabled={busy} />
+            </div>
+          )}
+          <div className="grid grid-cols-3 gap-2">
+            <SecondaryAction icon={Eye} label="View" title="View details" onClick={onOpen} />
+            <SecondaryAction icon={Pencil} label="Edit" title="Edit provider" onClick={onEdit} />
+            <SecondaryAction icon={Trash2} label="Delete" title="Delete provider" tone="danger" onClick={onDelete} />
           </div>
         </div>
       </div>

@@ -153,7 +153,7 @@ export interface UpdateProviderInput {
   /** Job type: Part-time, Full-time or Flexible. */
   duration: string;
   languages: string[];
-  skills: string[];
+  education: string;
   jobDescription: string;
   lastWorkingExperience: {
     jobTitle: string;

@@ -13,6 +13,20 @@ const inputClass =
   "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-2 placeholder:text-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 /** How far the provider will travel for work. `null` = not set. */
+/** Same choices as the provider app's "Work preferences" step. */
+const LANGUAGES = ["Hindi", "English", "Punjabi", "Bengali", "Marathi", "Tamil", "Telugu", "Gujarati", "Kannada"];
+const JOB_TYPES = ["Full-time", "Part-time"];
+const EDUCATION = [
+  "No formal education",
+  "Primary school",
+  "Middle school",
+  "Secondary (10th pass)",
+  "Higher secondary (12th pass)",
+  "Diploma / ITI",
+  "Graduate",
+  "Post graduate",
+];
+
 const RADIUS_OPTIONS: (number | null)[] = [null, 5, 10, 15, 25, 50];
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
@@ -88,7 +102,7 @@ export function ProviderEditForm({
     monthlySalary: provider.monthlySalary ?? null,
     duration: provider.duration,
     languages: provider.languages,
-    skills: provider.skills,
+    education: provider.education,
     jobDescription: provider.jobDescription,
     lastWorkingExperience: {
       jobTitle: provider.lastJob?.jobTitle ?? "",
@@ -99,13 +113,14 @@ export function ProviderEditForm({
       reasonForLeaving: provider.lastJob?.reasonForLeaving ?? "",
     },
   });
-  // Languages and skills are typed as comma-separated text.
-  const [languagesText, setLanguagesText] = useState(provider.languages.join(", "));
-  const [skillsText, setSkillsText] = useState(provider.skills.join(", "));
   const setJob = <K extends keyof UpdateProviderInput["lastWorkingExperience"]>(key: K, value: UpdateProviderInput["lastWorkingExperience"][K]) =>
     setForm((f) => ({ ...f, lastWorkingExperience: { ...f.lastWorkingExperience, [key]: value } }));
   const numberOrNull = (v: string) => (v.trim() === "" ? null : Number(v));
-  const list = (v: string) => v.split(",").map((x) => x.trim()).filter(Boolean);
+  const toggleLanguage = (l: string) =>
+    setForm((f) => ({ ...f, languages: f.languages.includes(l) ? f.languages.filter((x) => x !== l) : [...f.languages, l] }));
+  // Keep a language or education value the provider already has even if it is not one of the standard choices.
+  const languageChoices = [...LANGUAGES, ...form.languages.filter((l) => !LANGUAGES.includes(l))];
+  const educationChoices = form.education && !EDUCATION.includes(form.education) ? [form.education, ...EDUCATION] : EDUCATION;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((f) => ({ ...f, [key]: value }));
@@ -127,7 +142,7 @@ export function ProviderEditForm({
     setSaving(true);
     setError(null);
     try {
-      await onSave({ ...form, fullName: form.fullName.trim(), languages: list(languagesText), skills: list(skillsText) });
+      await onSave({ ...form, fullName: form.fullName.trim() });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save changes");
       setSaving(false);
@@ -215,72 +230,118 @@ export function ProviderEditForm({
         )}
       </Section>
 
-      <Section icon={Briefcase} title="Work & experience" hint="Experience, pay expectation and skills" tone="bg-info-soft text-info">
+      <Section icon={Briefcase} title="Work preferences" hint="Experience, pay expectation, languages and education" tone="bg-info-soft text-info">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Experience (years)">
-            <input type="number" min={0} className={inputClass} value={form.experienceYears ?? ""} onChange={(e) => set("experienceYears", numberOrNull(e.target.value))} />
+          <Field label="Years of experience">
+            <div className="relative">
+              <input type="number" min={0} className={`${inputClass} pr-16`} value={form.experienceYears ?? ""} onChange={(e) => set("experienceYears", numberOrNull(e.target.value))} />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-subtle">years</span>
+            </div>
           </Field>
-          <Field label="Expected monthly salary (₹)">
-            <input type="number" min={0} className={inputClass} value={form.monthlySalary ?? ""} onChange={(e) => set("monthlySalary", numberOrNull(e.target.value))} />
+          <Field label="Expected salary">
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-fg-2">₹</span>
+              <input type="number" min={0} className={`${inputClass} pl-7 pr-16`} value={form.monthlySalary ?? ""} onChange={(e) => set("monthlySalary", numberOrNull(e.target.value))} />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-subtle">/ month</span>
+            </div>
           </Field>
+
           <div className="sm:col-span-2">
-            <span className="mb-1 block text-xs font-medium text-fg-2">Job type</span>
-            <div role="radiogroup" aria-label="Job type" className="flex flex-wrap gap-2">
-              {["", "Part-time", "Full-time", "Flexible"].map((t) => {
+            <span className="mb-1.5 block text-xs font-medium text-fg-2">Duration</span>
+            <div role="radiogroup" aria-label="Duration" className="grid grid-cols-2 gap-2">
+              {JOB_TYPES.map((t) => {
                 const on = form.duration === t;
                 return (
                   <button
-                    key={t || "none"}
+                    key={t}
                     type="button"
                     role="radio"
                     aria-checked={on}
-                    onClick={() => set("duration", t)}
+                    onClick={() => set("duration", on ? "" : t)}
                     className={cn(
-                      "rounded-xl px-4 py-2 text-sm font-semibold ring-1 transition active:scale-95",
+                      "flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ring-1 transition active:scale-95",
                       on ? "bg-primary-soft text-primary ring-2 ring-primary" : "bg-surface text-fg-2 ring-border hover:bg-surface-2",
                     )}
                   >
-                    {t || "Not set"}
+                    {on && <Check className="h-4 w-4" />}
+                    {t}
                   </button>
                 );
               })}
             </div>
           </div>
-          <Field label="Languages" hint="Separate with commas, e.g. Hindi, Gujarati, English">
-            <input className={inputClass} value={languagesText} onChange={(e) => setLanguagesText(e.target.value)} />
-          </Field>
-          <Field label="Skills" hint="Separate with commas">
-            <input className={inputClass} value={skillsText} onChange={(e) => setSkillsText(e.target.value)} />
-          </Field>
+
           <div className="sm:col-span-2">
-            <Field label="About their work">
-              <textarea className={`${inputClass} resize-none`} rows={3} maxLength={2000} value={form.jobDescription} onChange={(e) => set("jobDescription", e.target.value)} />
+            <span className="mb-1.5 block text-xs font-medium text-fg-2">Languages</span>
+            <div role="group" aria-label="Languages" className="flex flex-wrap gap-2">
+              {languageChoices.map((l) => {
+                const on = form.languages.includes(l);
+                return (
+                  <button
+                    key={l}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleLanguage(l)}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium ring-1 transition active:scale-95",
+                      on ? "bg-primary-soft text-primary ring-primary" : "bg-surface text-fg-2 ring-border hover:bg-surface-2",
+                    )}
+                  >
+                    {on && <Check className="h-3.5 w-3.5" />}
+                    {l}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="sm:col-span-2">
+            <Field label="Education">
+              <select className={inputClass} value={form.education} onChange={(e) => set("education", e.target.value)}>
+                <option value="">Not set</option>
+                {educationChoices.map((e) => (
+                  <option key={e} value={e}>
+                    {e}
+                  </option>
+                ))}
+              </select>
             </Field>
           </div>
         </div>
-
       </Section>
 
-      <Section icon={History} title="Previous job" hint="Where they worked last" highlight>
+      <Section icon={History} title="Last job" hint="Their most recent work experience" highlight>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Job title">
-            <input className={inputClass} value={form.lastWorkingExperience.jobTitle} onChange={(e) => setJob("jobTitle", e.target.value)} />
+            <input className={inputClass} placeholder="e.g. Live-in Babysitter" value={form.lastWorkingExperience.jobTitle} onChange={(e) => setJob("jobTitle", e.target.value)} />
           </Field>
-          <Field label="Duration" hint="e.g. 3 years">
-            <input className={inputClass} value={form.lastWorkingExperience.duration} onChange={(e) => setJob("duration", e.target.value)} />
-          </Field>
-          <Field label="Work city">
+          <Field label="Working city">
             <input className={inputClass} value={form.lastWorkingExperience.workingCity} onChange={(e) => setJob("workingCity", e.target.value)} />
           </Field>
-          <Field label="Family size">
-            <input className={inputClass} value={form.lastWorkingExperience.familySize} onChange={(e) => setJob("familySize", e.target.value)} />
+          <Field label="Size of family">
+            <div className="relative">
+              <input type="number" min={0} className={`${inputClass} pr-20`} value={form.lastWorkingExperience.familySize} onChange={(e) => setJob("familySize", e.target.value)} />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-subtle">members</span>
+            </div>
           </Field>
-          <Field label="Salary (₹ / month)">
-            <input type="number" min={0} className={inputClass} value={form.lastWorkingExperience.salary ?? ""} onChange={(e) => setJob("salary", numberOrNull(e.target.value))} />
+          <Field label="Duration">
+            <input className={inputClass} placeholder="e.g. 3 years" value={form.lastWorkingExperience.duration} onChange={(e) => setJob("duration", e.target.value)} />
+          </Field>
+          <Field label="Salary">
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-fg-2">₹</span>
+              <input type="number" min={0} className={`${inputClass} pl-7 pr-12`} value={form.lastWorkingExperience.salary ?? ""} onChange={(e) => setJob("salary", numberOrNull(e.target.value))} />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-subtle">/ mo</span>
+            </div>
           </Field>
           <div className="sm:col-span-2">
             <Field label="Reason for leaving">
-              <input className={inputClass} value={form.lastWorkingExperience.reasonForLeaving} onChange={(e) => setJob("reasonForLeaving", e.target.value)} />
+              <textarea className={`${inputClass} resize-none`} rows={2} placeholder="e.g. Family relocated to another city" value={form.lastWorkingExperience.reasonForLeaving} onChange={(e) => setJob("reasonForLeaving", e.target.value)} />
+            </Field>
+          </div>
+          <div className="sm:col-span-2">
+            <Field label="Job description">
+              <textarea className={`${inputClass} resize-none`} rows={3} maxLength={2000} placeholder="e.g. Cared for two children, prepared meals…" value={form.jobDescription} onChange={(e) => set("jobDescription", e.target.value)} />
             </Field>
           </div>
         </div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import {
   ArrowLeft,
+  BookOpen,
   Briefcase,
   CalendarClock,
   Check,
@@ -157,8 +158,8 @@ export function ProviderDetailView({
   const waNumber = waDigits.length === 10 ? `91${waDigits}` : waDigits;
   const docs = p.documents.filter((d) => d.image);
   const job = p.lastJob;
-  const jobFilled = job ? Object.values(job).some((v) => !isEmpty(v)) : false;
-  const hasWork = p.experienceYears !== null || p.monthlySalary !== undefined || !!p.duration || p.languages.length > 0 || p.skills.length > 0 || !!p.jobDescription;
+  const jobFilled = (job ? Object.values(job).some((v) => !isEmpty(v)) : false) || !!p.jobDescription;
+  const hasWork = p.experienceYears !== null || p.monthlySalary !== undefined || !!p.duration || p.languages.length > 0 || p.skills.length > 0 || !!p.education;
   const canAct = p.status === "pending" || p.status === "verification";
 
   return (
@@ -260,11 +261,12 @@ export function ProviderDetailView({
         <div className="space-y-5 lg:col-span-2">
           {hasWork && (
             <Section icon={Briefcase} title="Work & experience" tone="bg-accent-soft text-accent">
-              {(p.experienceYears !== null || p.monthlySalary !== undefined || p.duration) && (
-                <div className="grid gap-3 sm:grid-cols-3">
+              {(p.experienceYears !== null || p.monthlySalary !== undefined || p.duration || p.education) && (
+                <div className="grid gap-3 sm:grid-cols-2">
                   {p.experienceYears !== null && <Stat icon={GraduationCap} label="Experience" value={`${p.experienceYears} ${p.experienceYears === 1 ? "year" : "years"}`} />}
                   {p.monthlySalary !== undefined && <Stat icon={Wallet} label="Expected salary" value={`${formatRupees(p.monthlySalary)} / mo`} />}
-                  {p.duration && <Stat icon={CalendarClock} label="Job type" value={p.duration} />}
+                  {p.duration && <Stat icon={CalendarClock} label="Duration" value={p.duration} />}
+                  {p.education && <Stat icon={BookOpen} label="Education" value={p.education} />}
                 </div>
               )}
               {p.languages.length > 0 && (
@@ -279,34 +281,37 @@ export function ProviderDetailView({
                   <Chips items={p.skills} tone="bg-surface-3 text-fg-2" />
                 </div>
               )}
-              {p.jobDescription && (
-                <p className="mt-4 rounded-xl bg-surface-2 p-3.5 text-sm leading-relaxed text-foreground ring-1 ring-border">{p.jobDescription}</p>
-              )}
             </Section>
           )}
 
           {/* Previous job: highlighted */}
-          {job && jobFilled && (
+          {jobFilled && (
             <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 via-surface to-surface ring-2 ring-amber-300/70 dark:from-amber-400/10 dark:ring-amber-400/40">
               <header className="flex items-center gap-3 bg-amber-100/70 px-5 py-3.5 dark:bg-amber-400/15">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-400 text-amber-950 shadow-sm">
                   <History className="h-[18px] w-[18px]" />
                 </span>
                 <h2 className="text-sm font-bold text-amber-950 dark:text-amber-200">Previous job</h2>
-                {job.duration && (
+                {job?.duration && (
                   <span className="ml-auto rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-amber-950">
                     {/^\d+(\.\d+)?$/.test(job.duration) ? `${job.duration} ${job.duration === "1" ? "year" : "years"}` : job.duration}
                   </span>
                 )}
               </header>
               <div className="p-5">
-                {job.jobTitle && <p className="text-xl font-bold text-foreground">{job.jobTitle}</p>}
-                <dl className={cn("grid gap-4 sm:grid-cols-3", job.jobTitle && "mt-4")}>
-                  <Detail label="Work city" value={job.workingCity} />
-                  <Detail label="Family size" value={job.familySize} />
-                  <Detail label="Salary" value={job.salary !== undefined ? `${formatRupees(job.salary)} / month` : undefined} />
+                {job?.jobTitle && <p className="text-xl font-bold text-foreground">{job.jobTitle}</p>}
+                <dl className={cn("grid gap-4 sm:grid-cols-3", job?.jobTitle && "mt-4")}>
+                  <Detail label="Work city" value={job?.workingCity} />
+                  <Detail label="Family size" value={job?.familySize} />
+                  <Detail label="Salary" value={job?.salary !== undefined ? `${formatRupees(job.salary)} / month` : undefined} />
                 </dl>
-                {job.reasonForLeaving && (
+                {p.jobDescription && (
+                  <div className="mt-4 rounded-xl bg-surface p-3.5 ring-1 ring-amber-300/60">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted">Job description</p>
+                    <p className="mt-0.5 text-sm leading-relaxed text-foreground">{p.jobDescription}</p>
+                  </div>
+                )}
+                {job?.reasonForLeaving && (
                   <div className="mt-4 flex gap-2.5 rounded-xl bg-surface p-3.5 ring-1 ring-amber-300/60">
                     <Quote className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                     <div>
