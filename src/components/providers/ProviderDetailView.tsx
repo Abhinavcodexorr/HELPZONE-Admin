@@ -345,7 +345,6 @@ export function ProviderDetailView({
                       />
                       <Row label="Work City" value={job.workingCity} />
                       <Row label="Family Size" value={job.familySize} />
-                      <Row label="Employer Nationality" value={job.employerNationality} />
                       <Row label="Salary" value={job.salary !== undefined ? `${formatRupees(job.salary)} / month` : undefined} />
                       <Row label="Reason for Leaving" value={job.reasonForLeaving} />
                     </div>

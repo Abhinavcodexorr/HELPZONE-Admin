@@ -46,10 +46,8 @@ export function ProviderEditForm({
   onSave: (input: UpdateProviderInput) => Promise<void>;
 }) {
   const orEmpty = (v: string) => (v === "—" ? "" : v);
-  const [form, setForm] = useState<Omit<UpdateProviderInput, "gender"> & { gender: "Male" | "Female" | "" }>({
+  const [form, setForm] = useState<UpdateProviderInput>({
     fullName: provider.fullName === "Unnamed provider" ? "" : provider.fullName,
-    gender: provider.gender,
-    nationality: orEmpty(provider.nationality),
     categoryIds: provider.categoryIds,
     city: orEmpty(provider.city),
     state: provider.state,
@@ -69,7 +67,6 @@ export function ProviderEditForm({
       duration: provider.lastJob?.duration ?? "",
       workingCity: provider.lastJob?.workingCity ?? "",
       familySize: provider.lastJob?.familySize ?? "",
-      employerNationality: provider.lastJob?.employerNationality ?? "",
       salary: provider.lastJob?.salary ?? null,
       reasonForLeaving: provider.lastJob?.reasonForLeaving ?? "",
     },
@@ -102,7 +99,7 @@ export function ProviderEditForm({
     setSaving(true);
     setError(null);
     try {
-      await onSave({ ...form, gender: form.gender || undefined, fullName: form.fullName.trim(), languages: list(languagesText), skills: list(skillsText) });
+      await onSave({ ...form, fullName: form.fullName.trim(), languages: list(languagesText), skills: list(skillsText) });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save changes");
       setSaving(false);
@@ -130,16 +127,6 @@ export function ProviderEditForm({
               <input className={inputClass} value={form.fullName} onChange={(e) => set("fullName", e.target.value)} required />
             </Field>
           </div>
-          <Field label="Gender">
-            <select className={inputClass} value={form.gender} onChange={(e) => set("gender", e.target.value as "Male" | "Female" | "")}>
-              <option value="">Not set</option>
-              <option value="Female">Female</option>
-              <option value="Male">Male</option>
-            </select>
-          </Field>
-          <Field label="Nationality">
-            <input className={inputClass} value={form.nationality} onChange={(e) => set("nationality", e.target.value)} />
-          </Field>
         </div>
       </Section>
 
@@ -250,9 +237,6 @@ export function ProviderEditForm({
           </Field>
           <Field label="Family size">
             <input className={inputClass} value={form.lastWorkingExperience.familySize} onChange={(e) => setJob("familySize", e.target.value)} />
-          </Field>
-          <Field label="Employer nationality">
-            <input className={inputClass} value={form.lastWorkingExperience.employerNationality} onChange={(e) => setJob("employerNationality", e.target.value)} />
           </Field>
           <Field label="Salary (₹ / month)">
             <input type="number" min={0} className={inputClass} value={form.lastWorkingExperience.salary ?? ""} onChange={(e) => setJob("salary", numberOrNull(e.target.value))} />

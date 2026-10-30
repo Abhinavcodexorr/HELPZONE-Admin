@@ -141,8 +141,6 @@ export interface ProviderDocument {
 
 export interface UpdateProviderInput {
   fullName: string;
-  gender?: "Male" | "Female";
-  nationality: string;
   categoryIds: string[];
   city: string;
   state: string;
@@ -162,7 +160,6 @@ export interface UpdateProviderInput {
     duration: string;
     workingCity: string;
     familySize: string;
-    employerNationality: string;
     salary: number | null;
     reasonForLeaving: string;
   };

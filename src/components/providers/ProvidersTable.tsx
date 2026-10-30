@@ -108,7 +108,6 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
     video: showAll || providers.some((p) => p.introVideoUrl),
   };
   const columnCount = 6 + Object.values(col).filter(Boolean).length;
-  const genderCount = (g: "Male" | "Female") => facets.gender[g] ?? 0;
 
   const chips = describeProviderFilters(filters, labelForCategory).map((c) => ({
     key: c.key,
@@ -167,15 +166,6 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                   onChange={(city) => patch({ city })}
                   options={[{ value: "", label: "All cities" }, ...facets.cities.map((c) => ({ value: c.name, label: `${c.name} (${c.count})` }))]}
                 />
-              </FilterGroup>
-              <FilterGroup label="Gender">
-                <PillRow>
-                  {(["Male", "Female"] as const).map((g) => (
-                    <Pill key={g} active={filters.gender === g} onClick={() => patch({ gender: filters.gender === g ? "any" : g })} count={genderCount(g)}>
-                      {g}
-                    </Pill>
-                  ))}
-                </PillRow>
               </FilterGroup>
               <FilterGroup label="Experience">
                 <PillRow>
