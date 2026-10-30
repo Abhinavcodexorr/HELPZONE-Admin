@@ -282,8 +282,8 @@ export function ProviderDetailView({
           )}
 
           {/* ── WORK PROFILE ── */}
-          {(p.categories.length > 0 || p.serviceRadiusKm || p.jobDescription) && (
-            <InfoCard icon={Briefcase} iconBg="bg-accent-soft text-accent" title="💼 Work Profile">
+          {(p.categories.length > 0 || p.serviceRadiusKm) && (
+            <InfoCard icon={Briefcase} iconBg="bg-accent-soft text-accent" title="🛠️ Service">
               {p.categories.length > 0 && (
                 <div className="flex items-start gap-3 py-2.5 border-b border-border last:border-0">
                   <span className="min-w-[130px] text-xs font-medium text-muted shrink-0">Job Categories</span>
@@ -298,37 +298,62 @@ export function ProviderDetailView({
                   <span className="text-sm font-semibold text-foreground">Within {p.serviceRadiusKm} km</span>
                 </div>
               ) : null}
-              {p.jobDescription && (
-                <div className="mt-3 rounded-xl bg-surface-2 p-3 text-sm text-foreground leading-relaxed ring-1 ring-border">
-                  <p className="text-xs font-medium text-muted mb-1">📝 Job Description</p>
-                  {p.jobDescription}
-                </div>
-              )}
             </InfoCard>
           )}
 
-          {/* ── LAST JOB ── */}
-          {p.lastJob && Object.values(p.lastJob).some((v) => !isEmpty(v)) && (
-            <InfoCard icon={History} iconBg="bg-warning-soft text-warning" title="🕐 Previous Work Experience">
-              <Row label="Job Title" value={p.lastJob.jobTitle} />
-              <Row
-                label="Duration"
-                value={
-                  /^\d+(\.\d+)?$/.test(p.lastJob.duration)
-                    ? `${p.lastJob.duration} ${p.lastJob.duration === "1" ? "year" : "years"}`
-                    : p.lastJob.duration
-                }
-              />
-              <Row label="Work City" value={p.lastJob.workingCity} />
-              <Row label="Family Size" value={p.lastJob.familySize} />
-              <Row label="Employer Nationality" value={p.lastJob.employerNationality} />
-              <Row
-                label="Salary"
-                value={p.lastJob.salary !== undefined ? `${formatRupees(p.lastJob.salary)} / month` : undefined}
-              />
-              <Row label="Reason for Leaving" value={p.lastJob.reasonForLeaving} />
-            </InfoCard>
-          )}
+          {/* ── WORK & EXPERIENCE ── */}
+          {(() => {
+            const job = p.lastJob;
+            const jobFilled = job ? Object.values(job).some((v) => !isEmpty(v)) : false;
+            const filled =
+              p.experienceYears !== null || p.monthlySalary !== undefined || p.duration || p.languages.length > 0 || p.skills.length > 0 || p.jobDescription || jobFilled;
+            if (!filled) return null;
+            return (
+              <InfoCard icon={History} iconBg="bg-warning-soft text-warning" title="💼 Work & Experience">
+                <Row
+                  label="Experience"
+                  value={p.experienceYears !== null ? `${p.experienceYears} ${p.experienceYears === 1 ? "year" : "years"}` : undefined}
+                />
+                <Row label="Expected Salary" value={p.monthlySalary !== undefined ? `${formatRupees(p.monthlySalary)} / month` : undefined} />
+                <Row label="Job Type" value={p.duration} />
+                {p.languages.length > 0 && (
+                  <div className="flex items-start gap-3 py-2.5 border-b border-border last:border-0">
+                    <span className="min-w-[130px] text-xs font-medium text-muted shrink-0">Languages</span>
+                    <ChipList items={p.languages} tone="blue" />
+                  </div>
+                )}
+                {p.skills.length > 0 && (
+                  <div className="flex items-start gap-3 py-2.5 border-b border-border last:border-0">
+                    <span className="min-w-[130px] text-xs font-medium text-muted shrink-0">Skills</span>
+                    <ChipList items={p.skills} tone="gray" />
+                  </div>
+                )}
+                {p.jobDescription && (
+                  <div className="mt-3 rounded-xl bg-surface-2 p-3 text-sm text-foreground leading-relaxed ring-1 ring-border">
+                    <p className="text-xs font-medium text-muted mb-1">📝 About their work</p>
+                    {p.jobDescription}
+                  </div>
+                )}
+                {job && jobFilled && (
+                  <div className="mt-4">
+                    <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-subtle">Previous job</p>
+                    <div className="rounded-xl bg-surface-2 px-4 ring-1 ring-border">
+                      <Row label="Job Title" value={job.jobTitle} />
+                      <Row
+                        label="Duration"
+                        value={/^\d+(\.\d+)?$/.test(job.duration) ? `${job.duration} ${job.duration === "1" ? "year" : "years"}` : job.duration}
+                      />
+                      <Row label="Work City" value={job.workingCity} />
+                      <Row label="Family Size" value={job.familySize} />
+                      <Row label="Employer Nationality" value={job.employerNationality} />
+                      <Row label="Salary" value={job.salary !== undefined ? `${formatRupees(job.salary)} / month` : undefined} />
+                      <Row label="Reason for Leaving" value={job.reasonForLeaving} />
+                    </div>
+                  </div>
+                )}
+              </InfoCard>
+            );
+          })()}
 
           {/* ── IDENTITY DOCUMENTS ── */}
           {docs.length > 0 && (

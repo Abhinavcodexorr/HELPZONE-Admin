@@ -95,7 +95,8 @@ export interface Provider {
   bio: string;
   education: string;
   certificate: string;
-  experienceYears: number;
+  /** null when the provider hasn't said. */
+  experienceYears: number | null;
   monthlySalary?: number;
   preferredJob: string;
   duration: string;
@@ -149,6 +150,22 @@ export interface UpdateProviderInput {
   pincode: string;
   mobileNumber: string;
   whatsappNumber: string;
+  experienceYears: number | null;
+  monthlySalary: number | null;
+  /** Job type: Part-time, Full-time or Flexible. */
+  duration: string;
+  languages: string[];
+  skills: string[];
+  jobDescription: string;
+  lastWorkingExperience: {
+    jobTitle: string;
+    duration: string;
+    workingCity: string;
+    familySize: string;
+    employerNationality: string;
+    salary: number | null;
+    reasonForLeaving: string;
+  };
   /** How far (km) the provider will travel for work; null = not set. */
   serviceRadiusKm: number | null;
 }

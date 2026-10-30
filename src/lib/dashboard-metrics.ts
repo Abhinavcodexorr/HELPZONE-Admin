@@ -152,7 +152,7 @@ export function computeMetrics(
     { label: "Intro video", have: providers.filter((p) => p.introVideoUrl).length },
   ].map((d) => ({ ...d, pct: pct(d.have, loaded) ?? 0 }));
 
-  const bucket = (from: number, to: number) => providers.filter((p) => p.experienceYears >= from && p.experienceYears < to).length;
+  const bucket = (from: number, to: number) => providers.filter((p) => (p.experienceYears ?? 0) >= from && (p.experienceYears ?? 0) < to).length;
 
   // Needs attention
   const staleNew = pending.filter((p) => ageDays(p.submittedAt, now) > STALE_NEW_DAYS).length;

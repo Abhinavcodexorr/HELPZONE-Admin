@@ -58,7 +58,29 @@ export function ProviderEditForm({
     mobileNumber: orEmpty(provider.mobileNumber),
     whatsappNumber: orEmpty(provider.whatsappNumber),
     serviceRadiusKm: provider.serviceRadiusKm,
+    experienceYears: provider.experienceYears,
+    monthlySalary: provider.monthlySalary ?? null,
+    duration: provider.duration,
+    languages: provider.languages,
+    skills: provider.skills,
+    jobDescription: provider.jobDescription,
+    lastWorkingExperience: {
+      jobTitle: provider.lastJob?.jobTitle ?? "",
+      duration: provider.lastJob?.duration ?? "",
+      workingCity: provider.lastJob?.workingCity ?? "",
+      familySize: provider.lastJob?.familySize ?? "",
+      employerNationality: provider.lastJob?.employerNationality ?? "",
+      salary: provider.lastJob?.salary ?? null,
+      reasonForLeaving: provider.lastJob?.reasonForLeaving ?? "",
+    },
   });
+  // Languages and skills are typed as comma-separated text.
+  const [languagesText, setLanguagesText] = useState(provider.languages.join(", "));
+  const [skillsText, setSkillsText] = useState(provider.skills.join(", "));
+  const setJob = <K extends keyof UpdateProviderInput["lastWorkingExperience"]>(key: K, value: UpdateProviderInput["lastWorkingExperience"][K]) =>
+    setForm((f) => ({ ...f, lastWorkingExperience: { ...f.lastWorkingExperience, [key]: value } }));
+  const numberOrNull = (v: string) => (v.trim() === "" ? null : Number(v));
+  const list = (v: string) => v.split(",").map((x) => x.trim()).filter(Boolean);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((f) => ({ ...f, [key]: value }));
@@ -80,7 +102,7 @@ export function ProviderEditForm({
     setSaving(true);
     setError(null);
     try {
-      await onSave({ ...form, gender: form.gender || undefined, fullName: form.fullName.trim() });
+      await onSave({ ...form, gender: form.gender || undefined, fullName: form.fullName.trim(), languages: list(languagesText), skills: list(skillsText) });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save changes");
       setSaving(false);
@@ -169,6 +191,78 @@ export function ProviderEditForm({
             })}
           </div>
         )}
+      </Section>
+
+      <Section title="Work & experience">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Experience (years)">
+            <input type="number" min={0} className={inputClass} value={form.experienceYears ?? ""} onChange={(e) => set("experienceYears", numberOrNull(e.target.value))} />
+          </Field>
+          <Field label="Expected monthly salary (₹)">
+            <input type="number" min={0} className={inputClass} value={form.monthlySalary ?? ""} onChange={(e) => set("monthlySalary", numberOrNull(e.target.value))} />
+          </Field>
+          <div className="sm:col-span-2">
+            <span className="mb-1 block text-xs font-medium text-fg-2">Job type</span>
+            <div role="radiogroup" aria-label="Job type" className="flex flex-wrap gap-2">
+              {["", "Part-time", "Full-time", "Flexible"].map((t) => {
+                const on = form.duration === t;
+                return (
+                  <button
+                    key={t || "none"}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => set("duration", t)}
+                    className={cn(
+                      "rounded-xl px-4 py-2 text-sm font-semibold ring-1 transition active:scale-95",
+                      on ? "bg-primary-soft text-primary ring-2 ring-primary" : "bg-surface text-fg-2 ring-border hover:bg-surface-2",
+                    )}
+                  >
+                    {t || "Not set"}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <Field label="Languages" hint="Separate with commas, e.g. Hindi, Gujarati, English">
+            <input className={inputClass} value={languagesText} onChange={(e) => setLanguagesText(e.target.value)} />
+          </Field>
+          <Field label="Skills" hint="Separate with commas">
+            <input className={inputClass} value={skillsText} onChange={(e) => setSkillsText(e.target.value)} />
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="About their work">
+              <textarea className={`${inputClass} resize-none`} rows={3} maxLength={2000} value={form.jobDescription} onChange={(e) => set("jobDescription", e.target.value)} />
+            </Field>
+          </div>
+        </div>
+
+        <p className="mb-3 mt-5 text-[11px] font-semibold uppercase tracking-wide text-subtle">Previous job</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Job title">
+            <input className={inputClass} value={form.lastWorkingExperience.jobTitle} onChange={(e) => setJob("jobTitle", e.target.value)} />
+          </Field>
+          <Field label="Duration" hint="e.g. 3 years">
+            <input className={inputClass} value={form.lastWorkingExperience.duration} onChange={(e) => setJob("duration", e.target.value)} />
+          </Field>
+          <Field label="Work city">
+            <input className={inputClass} value={form.lastWorkingExperience.workingCity} onChange={(e) => setJob("workingCity", e.target.value)} />
+          </Field>
+          <Field label="Family size">
+            <input className={inputClass} value={form.lastWorkingExperience.familySize} onChange={(e) => setJob("familySize", e.target.value)} />
+          </Field>
+          <Field label="Employer nationality">
+            <input className={inputClass} value={form.lastWorkingExperience.employerNationality} onChange={(e) => setJob("employerNationality", e.target.value)} />
+          </Field>
+          <Field label="Salary (₹ / month)">
+            <input type="number" min={0} className={inputClass} value={form.lastWorkingExperience.salary ?? ""} onChange={(e) => setJob("salary", numberOrNull(e.target.value))} />
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Reason for leaving">
+              <input className={inputClass} value={form.lastWorkingExperience.reasonForLeaving} onChange={(e) => setJob("reasonForLeaving", e.target.value)} />
+            </Field>
+          </div>
+        </div>
       </Section>
 
       <Section title="Service radius">

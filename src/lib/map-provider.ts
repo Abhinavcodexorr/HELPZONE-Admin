@@ -124,7 +124,7 @@ export function mapToProvider(provider: BackendProvider): Provider {
     bio: provider.bio ?? "",
     education: provider.education ?? "",
     certificate: provider.certificate ?? "",
-    experienceYears: provider.experienceYears ?? 0,
+    experienceYears: provider.experienceYears ?? null,
     monthlySalary: provider.monthlySalary,
     preferredJob: provider.preferredJob ?? "",
     duration: provider.duration ?? "",
