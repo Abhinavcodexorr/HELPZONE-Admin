@@ -213,19 +213,27 @@ export function ProviderCard({
         {/* Pushes the footer to the bottom so every card in a row is the same height. */}
         <div className="flex-1" />
 
-        <div className="mt-4 space-y-2.5 border-t border-border pt-3.5">
-          {(p.status === "pending" || p.status === "verification") && (
+        <div className="mt-4 border-t border-border pt-3.5">
+          {p.status === "pending" ? (
+            // New request: start the review, look at it, or remove it.
             <div className="flex items-center gap-2">
-              {p.status === "pending" && <TextAction icon={ShieldCheck} label="Verify" tone="primary" onClick={onVerify} disabled={busy} />}
+              <TextAction icon={ShieldCheck} label="Verify" tone="primary" onClick={onVerify} disabled={busy} />
+              <TextAction icon={Eye} label="View" tone="neutral" onClick={onOpen} />
+              <TextAction icon={Trash2} label="Delete" tone="danger" onClick={onDelete} />
+            </div>
+          ) : p.status === "verification" ? (
+            // In verification: only the decision.
+            <div className="flex items-center gap-2">
               <TextAction icon={Check} label="Approve" tone="success" onClick={onApprove} disabled={busy} />
               <TextAction icon={X} label="Reject" tone="danger" onClick={onReject} disabled={busy} />
             </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              <SecondaryAction icon={Eye} label="View" title="View details" onClick={onOpen} />
+              <SecondaryAction icon={Pencil} label="Edit" title="Edit provider" onClick={onEdit} />
+              <SecondaryAction icon={Trash2} label="Delete" title="Delete provider" tone="danger" onClick={onDelete} />
+            </div>
           )}
-          <div className="grid grid-cols-3 gap-2">
-            <SecondaryAction icon={Eye} label="View" title="View details" onClick={onOpen} />
-            <SecondaryAction icon={Pencil} label="Edit" title="Edit provider" onClick={onEdit} />
-            <SecondaryAction icon={Trash2} label="Delete" title="Delete provider" tone="danger" onClick={onDelete} />
-          </div>
         </div>
       </div>
     </article>
