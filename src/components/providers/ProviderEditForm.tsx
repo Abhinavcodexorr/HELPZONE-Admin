@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Radar } from "lucide-react";
+import { ArrowLeft, Briefcase, Check, History, MapPin, Radar, User, Wrench, type LucideIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { labelForCategory } from "@/lib/map-provider";
@@ -25,11 +25,39 @@ function Field({ label, children, hint }: { label: string; children: React.React
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  icon: Icon,
+  title,
+  hint,
+  tone = "bg-primary-soft text-primary",
+  highlight = false,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  hint?: string;
+  tone?: string;
+  /** Warm accent, used for the previous-job block. */
+  highlight?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <section className="rounded-2xl bg-surface p-5 ring-1 ring-border">
-      <h2 className="mb-4 text-sm font-semibold text-foreground">{title}</h2>
-      {children}
+    <section
+      className={cn(
+        "overflow-hidden rounded-2xl ring-1",
+        highlight ? "bg-gradient-to-br from-amber-50 via-surface to-surface ring-2 ring-amber-300/70 dark:from-amber-400/10 dark:ring-amber-400/40" : "bg-surface ring-border",
+      )}
+    >
+      <header className={cn("flex items-center gap-3 px-5 py-3.5", highlight ? "bg-amber-100/70 dark:bg-amber-400/15" : "border-b border-border")}>
+        <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl", highlight ? "bg-amber-400 text-amber-950 shadow-sm" : tone)}>
+          <Icon className="h-[18px] w-[18px]" />
+        </span>
+        <div className="min-w-0">
+          <h2 className={cn("text-sm font-semibold", highlight ? "font-bold text-amber-950 dark:text-amber-200" : "text-foreground")}>{title}</h2>
+          {hint && <p className="text-xs text-muted">{hint}</p>}
+        </div>
+      </header>
+      <div className="p-5">{children}</div>
     </section>
   );
 }
@@ -112,15 +140,22 @@ export function ProviderEditForm({
         <ArrowLeft className="h-4 w-4" /> Back to details
       </Link>
 
-      <div className="flex items-center gap-3.5">
-        <Avatar name={provider.fullName} color={provider.avatarColor} size={52} />
+      <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-primary/15 via-accent/10 to-info/10 p-5 ring-1 ring-border">
+        {provider.kyc.photoImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={provider.kyc.photoImage} alt="" className="h-16 w-16 shrink-0 rounded-2xl object-cover ring-4 ring-surface" />
+        ) : (
+          <span className="rounded-2xl ring-4 ring-surface">
+            <Avatar name={provider.fullName} color={provider.avatarColor} size={64} />
+          </span>
+        )}
         <div className="min-w-0">
-          <h1 className="truncate text-lg font-bold text-foreground">Edit provider</h1>
-          <p className="truncate text-sm text-muted">{provider.fullName}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Editing provider</p>
+          <h1 className="truncate text-xl font-bold text-foreground">{provider.fullName}</h1>
         </div>
       </div>
 
-      <Section title="Personal details">
+      <Section icon={User} title="Name" hint="How this provider appears across the panel">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Field label="Full name">
@@ -130,7 +165,7 @@ export function ProviderEditForm({
         </div>
       </Section>
 
-      <Section title="Contact & location">
+      <Section icon={MapPin} title="Contact & location" hint="Where to reach them and where they work" tone="bg-success-soft text-success">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Mobile number">
             <input className={inputClass} value={form.mobileNumber} onChange={(e) => set("mobileNumber", e.target.value)} inputMode="tel" />
@@ -153,7 +188,7 @@ export function ProviderEditForm({
         </div>
       </Section>
 
-      <Section title="Services">
+      <Section icon={Wrench} title="Services" hint="What they offer. Tap to switch on or off" tone="bg-accent-soft text-accent">
         {options.length === 0 ? (
           <p className="text-sm text-subtle">No services yet. Add some under Services first.</p>
         ) : (
@@ -180,7 +215,7 @@ export function ProviderEditForm({
         )}
       </Section>
 
-      <Section title="Work & experience">
+      <Section icon={Briefcase} title="Work & experience" hint="Experience, pay expectation and skills" tone="bg-info-soft text-info">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Experience (years)">
             <input type="number" min={0} className={inputClass} value={form.experienceYears ?? ""} onChange={(e) => set("experienceYears", numberOrNull(e.target.value))} />
@@ -224,7 +259,9 @@ export function ProviderEditForm({
           </div>
         </div>
 
-        <p className="mb-3 mt-5 text-[11px] font-semibold uppercase tracking-wide text-subtle">Previous job</p>
+      </Section>
+
+      <Section icon={History} title="Previous job" hint="Where they worked last" highlight>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Job title">
             <input className={inputClass} value={form.lastWorkingExperience.jobTitle} onChange={(e) => setJob("jobTitle", e.target.value)} />
@@ -249,7 +286,7 @@ export function ProviderEditForm({
         </div>
       </Section>
 
-      <Section title="Service radius">
+      <Section icon={Radar} title="Service radius" hint="How far they will travel for work" tone="bg-warning-soft text-warning">
         <p className="mb-3 flex items-start gap-2 text-xs text-muted">
           <Radar className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           How far from their city this provider will travel. They are matched to customers and requests within this distance.
@@ -281,7 +318,7 @@ export function ProviderEditForm({
 
       {error && <p className="rounded-xl bg-danger-soft px-4 py-2.5 text-sm text-danger">{error}</p>}
 
-      <div className="sticky bottom-0 -mx-1 flex justify-end gap-2 bg-background/90 px-1 py-3 backdrop-blur">
+      <div className="sticky bottom-3 z-20 flex items-center justify-end gap-2 rounded-2xl bg-surface/95 px-4 py-3 shadow-lg ring-1 ring-border backdrop-blur">
         <Link href={backHref}>
           <Button type="button" variant="secondary" disabled={saving}>
             Cancel
