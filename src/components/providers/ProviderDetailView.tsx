@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ShimmerImage } from "@/components/ui/ShimmerImage";
 import { cn, digitsOnly, formatDateTime, formatRupees, isPdf, timeAgo } from "@/lib/utils";
+import { stayLabel } from "@/lib/stay";
 import { ImageLightbox } from "./ImageLightbox";
 import { RejectModal } from "./RejectModal";
 import { VideoModal } from "./VideoModal";
@@ -211,11 +212,16 @@ export function ProviderDetailView({
                   <Clock className="h-4 w-4 shrink-0" /> Applied {timeAgo(p.submittedAt)}
                 </span>
               </div>
-              {(p.categories.length > 0 || p.serviceRadiusKm) && (
+              {(p.categories.length > 0 || p.serviceRadiusKm || p.stayPreference.length > 0) && (
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
                   {p.categories.map((c) => (
                     <span key={c} className="rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary">
                       {c}
+                    </span>
+                  ))}
+                  {p.stayPreference.map((k) => (
+                    <span key={k} className="rounded-full bg-warning-soft px-3 py-1 text-xs font-semibold text-warning">
+                      {stayLabel(k)}
                     </span>
                   ))}
                   {p.serviceRadiusKm ? (

@@ -110,6 +110,8 @@ export interface Provider {
   introVideoThumbnailUrl: string;
   /** How far (km) the provider will travel for work; null = not set. */
   serviceRadiusKm: number | null;
+  /** "live_in", "live_out", or both. */
+  stayPreference: string[];
   profileComplete: boolean;
   isActive: boolean;
   submittedAt: string;
@@ -165,6 +167,7 @@ export interface UpdateProviderInput {
   };
   /** How far (km) the provider will travel for work; null = not set. */
   serviceRadiusKm: number | null;
+  stayPreference: string[];
 }
 
 // A catalog entry managed under Services. Providers reference it by `key`

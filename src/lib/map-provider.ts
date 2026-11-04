@@ -25,7 +25,7 @@ export interface BackendProvider {
   education?: string;
   certificate?: string;
   experienceYears?: number;
-  monthlySalary?: number;
+  monthlySalary?: number | null;
   preferredJob?: string;
   duration?: string;
   availability?: string;
@@ -40,6 +40,7 @@ export interface BackendProvider {
   introVideoUrl?: string;
   introVideoThumbnailUrl?: string;
   serviceRadiusKm?: number;
+  stayPreference?: string[];
   profileComplete?: boolean;
   imageUrl?: string;
   kyc?: { idType?: string; idNumber?: string; idDocumentUrl?: string };
@@ -86,7 +87,8 @@ function mapLastJob(job?: Partial<LastJob>): LastJob | undefined {
     reasonForLeaving: job.reasonForLeaving ?? "",
     familySize: job.familySize ?? "",
     employerNationality: job.employerNationality ?? "",
-    salary: job.salary,
+    // The edit form saves a cleared number as null; treat that as "not provided".
+    salary: job.salary ?? undefined,
   };
   const hasAnything = Object.values(mapped).some((v) => v !== "" && v !== undefined);
   return hasAnything ? mapped : undefined;
@@ -125,7 +127,7 @@ export function mapToProvider(provider: BackendProvider): Provider {
     education: provider.education ?? "",
     certificate: provider.certificate ?? "",
     experienceYears: provider.experienceYears ?? null,
-    monthlySalary: provider.monthlySalary,
+    monthlySalary: provider.monthlySalary ?? undefined,
     preferredJob: provider.preferredJob ?? "",
     duration: provider.duration ?? "",
     availability: provider.availability ?? "",
@@ -136,6 +138,7 @@ export function mapToProvider(provider: BackendProvider): Provider {
     introVideoUrl: provider.introVideoUrl ?? "",
     introVideoThumbnailUrl: provider.introVideoThumbnailUrl ?? "",
     serviceRadiusKm: provider.serviceRadiusKm ?? null,
+    stayPreference: provider.stayPreference ?? [],
     profileComplete: provider.profileComplete ?? false,
     isActive: provider.isActive ?? true,
     submittedAt: provider.createdAt,

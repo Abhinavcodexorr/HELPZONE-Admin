@@ -1,4 +1,5 @@
 import type { User } from "@/types";
+import { stayLabel } from "@/lib/stay";
 
 const DAY = 86_400_000;
 
@@ -53,6 +54,7 @@ export interface ProviderFilters {
   city: string; // "" = any
   gender: "any" | "Male" | "Female";
   experience: ExperienceBucket[];
+  stay: string[];
   applied: DatePreset;
   sort: ProviderSort;
 }
@@ -62,6 +64,7 @@ export const defaultProviderFilters: ProviderFilters = {
   city: "",
   gender: "any",
   experience: [],
+  stay: [],
   applied: "any",
   sort: "newest",
 };
@@ -81,6 +84,7 @@ export function providerListQuery(
   if (f.city) params.set("city", f.city);
   if (f.gender !== "any") params.set("gender", f.gender);
   if (f.experience.length) params.set("experience", f.experience.join(","));
+  if (f.stay.length) params.set("stay", f.stay.join(","));
   if (f.applied !== "any") params.set("applied", f.applied);
   return params.toString();
 }
@@ -96,6 +100,7 @@ export function describeProviderFilters(
   f.experience.forEach((e) =>
     chips.push({ key: `exp-${e}`, label: experienceBuckets.find((b) => b.value === e)!.label, clear: (cur) => ({ experience: cur.experience.filter((x) => x !== e) }) }),
   );
+  f.stay.forEach((k) => chips.push({ key: `stay-${k}`, label: stayLabel(k), clear: (cur) => ({ stay: cur.stay.filter((x) => x !== k) }) }));
   if (f.applied !== "any") chips.push({ key: "applied", label: `Applied: ${presetLabel(f.applied)}`, clear: { applied: "any" } });
   return chips;
 }

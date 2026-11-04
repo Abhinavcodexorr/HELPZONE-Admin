@@ -5,6 +5,7 @@ import { Check, Clock, Eye, FileText, MapPin, Pencil, Phone, Radar, ShieldCheck,
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { cn, timeAgo } from "@/lib/utils";
+import { stayLabel } from "@/lib/stay";
 import type { Provider, ProviderStatus } from "@/types";
 
 const statusTone: Record<ProviderStatus, "green" | "amber" | "red" | "blue"> = {
@@ -179,6 +180,16 @@ export function ProviderCard({
             </p>
           ) : null}
         </div>
+
+        {p.stayPreference.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {p.stayPreference.map((k) => (
+              <span key={k} className="rounded-full bg-warning-soft px-2.5 py-0.5 text-[11px] font-semibold text-warning">
+                {stayLabel(k)}
+              </span>
+            ))}
+          </div>
+        )}
 
         {p.categories.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">

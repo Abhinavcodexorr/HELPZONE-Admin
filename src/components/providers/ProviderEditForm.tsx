@@ -6,6 +6,7 @@ import { ArrowLeft, Briefcase, Check, History, MapPin, Radar, User, Wrench, type
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { labelForCategory } from "@/lib/map-provider";
+import { STAY_OPTIONS } from "@/lib/stay";
 import { cn } from "@/lib/utils";
 import type { Provider, Service, UpdateProviderInput } from "@/types";
 
@@ -98,6 +99,7 @@ export function ProviderEditForm({
     mobileNumber: orEmpty(provider.mobileNumber),
     whatsappNumber: orEmpty(provider.whatsappNumber),
     serviceRadiusKm: provider.serviceRadiusKm,
+    stayPreference: provider.stayPreference,
     experienceYears: provider.experienceYears,
     monthlySalary: provider.monthlySalary ?? null,
     duration: provider.duration,
@@ -269,6 +271,33 @@ export function ProviderEditForm({
                 );
               })}
             </div>
+          </div>
+
+          <div className="sm:col-span-2">
+            <span className="mb-1.5 block text-xs font-medium text-fg-2">Live in / Live out</span>
+            <div role="group" aria-label="Live in or live out" className="grid grid-cols-2 gap-2">
+              {STAY_OPTIONS.map((o) => {
+                const on = form.stayPreference.includes(o.key);
+                return (
+                  <button
+                    key={o.key}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() =>
+                      setForm((f) => ({ ...f, stayPreference: f.stayPreference.includes(o.key) ? f.stayPreference.filter((k) => k !== o.key) : [...f.stayPreference, o.key] }))
+                    }
+                    className={cn(
+                      "flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ring-1 transition active:scale-95",
+                      on ? "bg-primary-soft text-primary ring-2 ring-primary" : "bg-surface text-fg-2 ring-border hover:bg-surface-2",
+                    )}
+                  >
+                    {on && <Check className="h-4 w-4" />}
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-1 text-[11px] text-subtle">Select both if they can do either.</p>
           </div>
 
           <div className="sm:col-span-2">

@@ -18,6 +18,7 @@ import {
 import { PAGE_SIZE, useProviderList } from "./useProviderList";
 import type { ProviderStatus } from "@/types";
 import { labelForCategory } from "@/lib/map-provider";
+import { STAY_OPTIONS } from "@/lib/stay";
 import { NEW_PROVIDER_EVENT } from "@/components/notifications/NewProviderNotifier";
 import { useProviders } from "@/store/ProvidersContext";
 import { RejectModal } from "./RejectModal";
@@ -150,6 +151,15 @@ export function ProvidersTable({ status }: { status: ProviderStatus }) {
                   {experienceBuckets.map((b) => (
                     <Pill key={b.value} active={filters.experience.includes(b.value)} onClick={() => patch({ experience: toggle(filters.experience, b.value) })}>
                       {b.label}
+                    </Pill>
+                  ))}
+                </PillRow>
+              </FilterGroup>
+              <FilterGroup label="Live in / Live out">
+                <PillRow>
+                  {STAY_OPTIONS.map((o) => (
+                    <Pill key={o.key} active={filters.stay.includes(o.key)} onClick={() => patch({ stay: toggle(filters.stay, o.key) })}>
+                      {o.label}
                     </Pill>
                   ))}
                 </PillRow>
