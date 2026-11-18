@@ -22,6 +22,7 @@ import {
   Radar,
   ShieldCheck,
   Wallet,
+  User,
   X,
   ZoomIn,
   type LucideIcon,
@@ -31,7 +32,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ShimmerImage } from "@/components/ui/ShimmerImage";
-import { cn, digitsOnly, formatDateTime, formatRupees, isPdf, timeAgo } from "@/lib/utils";
+import { cn, digitsOnly, formatDate, formatDateTime, formatRupees, isPdf, timeAgo } from "@/lib/utils";
 import { stayLabel } from "@/lib/stay";
 import { ImageLightbox } from "./ImageLightbox";
 import { RejectModal } from "./RejectModal";
@@ -379,8 +380,18 @@ export function ProviderDetailView({
 
         {/* ── Side column ── */}
         <div className="space-y-5">
+          <Section icon={User} title="Personal details" tone="bg-primary-soft text-primary">
+            <dl className="space-y-4">
+              <Detail label="Date of birth" value={p.dateOfBirth ? formatDate(p.dateOfBirth) : undefined} />
+              <Detail label="Age" value={p.age !== undefined ? `${p.age} years` : undefined} />
+              <Detail label="Marital status" value={p.maritalStatus} />
+              <Detail label="Religion" value={p.religion} />
+            </dl>
+          </Section>
+
           <Section icon={MapPin} title="Contact & location" tone="bg-success-soft text-success">
             <dl className="space-y-4">
+              <Detail label="Email" value={p.email} />
               <Detail label="Mobile" value={phoneOk ? p.mobileNumber : undefined} />
               <Detail label="WhatsApp" value={p.whatsappNumber} />
               <Detail label="City" value={p.city} />

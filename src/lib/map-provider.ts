@@ -17,6 +17,7 @@ export interface BackendProvider {
   mobileNumber?: string;
   whatsappNumber?: string;
   age?: number;
+  dateOfBirth?: string;
   maritalStatus?: string;
   religion?: string;
   languages?: string[];
@@ -119,6 +120,7 @@ export function mapToProvider(provider: BackendProvider): Provider {
     whatsappNumber: provider.whatsappNumber || "—",
     email: provider.email ?? "",
     age: provider.age,
+    dateOfBirth: provider.dateOfBirth,
     maritalStatus: provider.maritalStatus ?? "",
     religion: provider.religion ?? "",
     languages: provider.languages ?? [],

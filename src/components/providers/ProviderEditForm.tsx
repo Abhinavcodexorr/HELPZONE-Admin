@@ -17,6 +17,15 @@ const inputClass =
 /** How far the provider will travel for work. `null` = not set. */
 /** Same choices as the provider app's "Work preferences" step. */
 const LANGUAGES = ["Hindi", "English", "Punjabi", "Bengali", "Marathi", "Tamil", "Telugu", "Gujarati", "Kannada"];
+const MARITAL = ["Single", "Married", "Divorced", "Widowed", "Prefer not to say"];
+function ageFromDob(dob: string) {
+  const d = new Date(dob);
+  if (Number.isNaN(d.getTime())) return "";
+  const t = new Date();
+  let a = t.getFullYear() - d.getFullYear();
+  if (t.getMonth() < d.getMonth() || (t.getMonth() === d.getMonth() && t.getDate() < d.getDate())) a -= 1;
+  return String(a);
+}
 const JOB_TYPES = ["Full-time", "Part-time"];
 const EDUCATION = [
   "No formal education",
@@ -93,6 +102,11 @@ export function ProviderEditForm({
   const orEmpty = (v: string) => (v === "—" ? "" : v);
   const [form, setForm] = useState<UpdateProviderInput>({
     fullName: provider.fullName === "Unnamed provider" ? "" : provider.fullName,
+    email: provider.email,
+    dateOfBirth: provider.dateOfBirth ? provider.dateOfBirth.slice(0, 10) : "",
+    age: provider.age ?? null,
+    maritalStatus: provider.maritalStatus,
+    religion: provider.religion,
     categoryIds: provider.categoryIds,
     city: orEmpty(provider.city),
     state: provider.state,
@@ -174,13 +188,40 @@ export function ProviderEditForm({
         </div>
       </div>
 
-      <Section icon={User} title="Name" hint="How this provider appears across the panel">
+      <Section icon={User} title="Personal details" hint="Name and basic details, useful while verifying">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Field label="Full name">
               <input className={inputClass} value={form.fullName} onChange={(e) => set("fullName", e.target.value)} required />
             </Field>
           </div>
+          <Field label="Email">
+            <input type="email" className={inputClass} value={form.email} onChange={(e) => set("email", e.target.value)} />
+          </Field>
+          <Field label="Date of birth">
+            <input type="date" className={inputClass} value={form.dateOfBirth} max={new Date().toISOString().slice(0, 10)} onChange={(e) => set("dateOfBirth", e.target.value)} />
+          </Field>
+          <Field label="Age">
+            <input
+              className={inputClass}
+              inputMode="numeric"
+              value={form.dateOfBirth ? ageFromDob(form.dateOfBirth) : (form.age ?? "")}
+              onChange={(e) => set("age", numberOrNull(e.target.value))}
+              disabled={!!form.dateOfBirth}
+              placeholder={form.dateOfBirth ? "" : "Or enter age"}
+            />
+          </Field>
+          <Field label="Marital status">
+            <select className={inputClass} value={form.maritalStatus} onChange={(e) => set("maritalStatus", e.target.value)}>
+              <option value="">Not set</option>
+              {(form.maritalStatus && !MARITAL.includes(form.maritalStatus) ? [form.maritalStatus, ...MARITAL] : MARITAL).map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Religion">
+            <input className={inputClass} value={form.religion} onChange={(e) => set("religion", e.target.value)} />
+          </Field>
         </div>
       </Section>
 

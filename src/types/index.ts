@@ -88,6 +88,7 @@ export interface Provider {
   whatsappNumber: string;
   email: string;
   age?: number;
+  dateOfBirth?: string;
   maritalStatus: string;
   religion: string;
   languages: string[];
@@ -143,6 +144,11 @@ export interface ProviderDocument {
 
 export interface UpdateProviderInput {
   fullName: string;
+  email: string;
+  dateOfBirth: string;
+  age: number | null;
+  maritalStatus: string;
+  religion: string;
   categoryIds: string[];
   city: string;
   state: string;
