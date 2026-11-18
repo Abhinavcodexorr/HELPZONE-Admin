@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from "clsx";
+import { formatMoney } from "@/lib/countries";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -57,8 +58,9 @@ export function digitsOnly(value: string) {
   return value.replace(/\D/g, "");
 }
 
+/** Money in the selected country's currency (the name is historical; it is no longer only rupees). */
 export function formatRupees(amount: number) {
-  return `₹${amount.toLocaleString("en-IN")}`;
+  return formatMoney(amount);
 }
 
 const AVATAR_COLORS = [

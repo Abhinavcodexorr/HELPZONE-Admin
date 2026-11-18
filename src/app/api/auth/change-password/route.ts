@@ -4,6 +4,7 @@ import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { isLimited, recordFailure, clearFailures } from "@/lib/auth/rate-limit";
 import { bumpGeneration, revokeSession } from "@/lib/auth/revocation";
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, createSessionToken } from "@/lib/auth/session";
+import { backendFetch } from "@/lib/server/backend";
 import { setEnvLocalValue } from "@/lib/server/env-file";
 
 const fail = (message: string, status: number) => NextResponse.json({ success: false, message }, { status });
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
 
   const passwordHash = process.env.ADMIN_PASSWORD_HASH;
   const secret = process.env.AUTH_SECRET;
-  if (!passwordHash || !secret) return fail("Sign-in isn't configured on the server yet.", 500);
+  if (!secret || (session.src === "env" && !passwordHash)) return fail("Sign-in isn't configured on the server yet.", 500);
 
   // Keyed by session, not IP: an admin brute-forcing their own current
   // password shouldn't be able to lock out the shared /login rate limit.
@@ -37,19 +38,35 @@ export async function POST(req: NextRequest) {
     return fail("New password must be at least 8 characters.", 400);
   }
 
-  const currentOk = await verifyPassword(currentPassword, passwordHash);
-  if (!currentOk) {
-    recordFailure(limitKey);
-    return fail("Current password is incorrect.", 401);
-  }
   if (currentPassword === newPassword) {
     return fail("New password must be different from your current password.", 400);
   }
-  clearFailures(limitKey);
 
-  const newHash = await hashPassword(newPassword);
-  process.env.ADMIN_PASSWORD_HASH = newHash;
-  const persisted = await setEnvLocalValue("ADMIN_PASSWORD_HASH", newHash);
+  let persisted = true;
+  if (session.src === "db" && session.adminId) {
+    // An admin created in the Admins page: the backend checks the current password and saves the new one.
+    const result = await backendFetch<{ success?: boolean; message?: string }>(`/api/v1/admin/admins/${encodeURIComponent(session.adminId)}/change-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }).catch(() => null);
+    if (!result) return fail("Can't reach the server right now. Please try again.", 502);
+    if (result.status === 401) {
+      recordFailure(limitKey);
+      return fail("Current password is incorrect.", 401);
+    }
+    if (result.status !== 200) return fail(result.data?.message || "Couldn't change the password.", result.status);
+  } else {
+    const currentOk = await verifyPassword(currentPassword, passwordHash as string);
+    if (!currentOk) {
+      recordFailure(limitKey);
+      return fail("Current password is incorrect.", 401);
+    }
+    const newHash = await hashPassword(newPassword);
+    process.env.ADMIN_PASSWORD_HASH = newHash;
+    persisted = await setEnvLocalValue("ADMIN_PASSWORD_HASH", newHash);
+  }
+  clearFailures(limitKey);
 
   // Every session — on this device and any other — is signed out, then this
   // device is immediately issued a fresh one so the admin isn't logged out.
@@ -66,7 +83,10 @@ export async function POST(req: NextRequest) {
   });
   res.cookies.set({
     name: SESSION_COOKIE,
-    value: await createSessionToken(session.email, secret),
+    value: await createSessionToken(
+      { email: session.email, name: session.name, role: session.role, src: session.src, adminId: session.adminId, countries: session.countries, country: session.country },
+      secret,
+    ),
     httpOnly: true,
     sameSite: "lax",
     secure,

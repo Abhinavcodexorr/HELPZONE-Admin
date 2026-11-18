@@ -1,5 +1,6 @@
 "use client";
 
+import { useCountry } from "@/store/CountryContext";
 import { useState } from "react";
 import { Award, X } from "lucide-react";
 import type { Plan, PlanInput } from "@/types";
@@ -18,6 +19,7 @@ export function PlanFormModal({
   onClose: () => void;
   onSubmit: (input: PlanInput) => Promise<void>;
 }) {
+  const { country } = useCountry();
   const editing = Boolean(plan);
   const [name, setName] = useState(plan?.name ?? "");
   const [description, setDescription] = useState(plan?.description ?? "");
@@ -129,7 +131,7 @@ export function PlanFormModal({
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="mb-1 block text-xs font-medium text-fg-2">Price (₹)</span>
+              <span className="mb-1 block text-xs font-medium text-fg-2">Price ({country.currencySymbol})</span>
               <input
                 className={inputClass}
                 type="number"

@@ -24,6 +24,19 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Signed in but no country chosen yet (an admin with several countries): they pick one first.
+  if (!session.country && pathname !== "/select-country") {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ success: false, message: "Choose a country first.", needsCountry: true }, { status: 409 });
+    }
+    const url = req.nextUrl.clone();
+    url.pathname = "/select-country";
+    url.search = "";
+    const next = safeNextPath(pathname + search);
+    if (next && next !== "/dashboard" && next !== "/") url.searchParams.set("next", next);
+    return NextResponse.redirect(url);
+  }
+
   if (pathname === "/login") {
     const url = req.nextUrl.clone();
     url.pathname = safeNextPath(req.nextUrl.searchParams.get("next")) ?? "/dashboard";

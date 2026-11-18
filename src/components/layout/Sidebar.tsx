@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LayoutDashboard, Users, HardHat, Wrench, Award, Settings, LogOut, Loader2 } from "lucide-react";
+import { LayoutDashboard, Users, HardHat, Wrench, Award, Settings, LogOut, Loader2, ShieldCheck } from "lucide-react";
 import { cn, displayNameFromEmail } from "@/lib/utils";
 import { Logo } from "@/components/ui/Logo";
 import { signOut } from "@/lib/auth/client";
 import { providerStages } from "@/lib/provider-stages";
+import { useCountry } from "@/store/CountryContext";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -16,6 +17,9 @@ const nav = [
   { href: "/services", label: "Services", icon: Wrench },
   { href: "/plans", label: "Plans", icon: Award },
 ];
+
+// Only a superadmin manages other admins.
+const adminNav = { href: "/admins", label: "Admins", icon: ShieldCheck };
 
 // Shown next to a collapsed-sidebar icon on hover — same dark pill used for
 // chart tooltips elsewhere, so it reads as part of the same design system.
@@ -38,6 +42,8 @@ export function Sidebar({
   collapsed?: boolean;
 }) {
   const pathname = usePathname();
+  const { role } = useCountry();
+  const items = role === "superadmin" ? [...nav, adminNav] : nav;
   const [signingOut, setSigningOut] = useState(false);
   const [providersOpen, setProvidersOpen] = useState(true);
   const [providersFlyout, setProvidersFlyout] = useState(false);
@@ -81,7 +87,7 @@ export function Sidebar({
         {!collapsed && (
           <p className="px-3 pb-2 pt-3 text-[11px] font-semibold uppercase tracking-wider text-subtle">Menu</p>
         )}
-        {nav.map(({ href, label, icon: Icon }) => {
+        {items.map(({ href, label, icon: Icon }) => {
           const active = href === "/providers" ? providersActive : pathname === href || pathname.startsWith(href + "/");
           const isProviders = href === "/providers";
           return (

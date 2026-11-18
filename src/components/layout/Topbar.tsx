@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CalendarDays, Menu, Moon, Sun, Sunrise, Sunset, type LucideIcon } from "lucide-react";
 import { NotificationsMenu } from "@/components/notifications/NotificationsMenu";
 import { ThemeToggle } from "./ThemeToggle";
+import { CountrySwitcher } from "./CountrySwitcher";
 
 function greetingFor(date: Date | null): { text: string; Icon: LucideIcon } {
   const hour = date?.getHours() ?? 12;
@@ -76,6 +77,7 @@ export function Topbar({ onMenuClick, userName }: { onMenuClick: () => void; use
       </div>
 
       <div className="col-start-3 flex items-center justify-end gap-2">
+        <CountrySwitcher />
         <div className="flex items-center gap-0.5 rounded-xl bg-surface-2 p-1 ring-1 ring-border">
           <ThemeToggle />
           <NotificationsMenu />

@@ -27,8 +27,20 @@ function importKey(secret: string, usage: KeyUsage) {
   return crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, [usage]);
 }
 
+export type AdminRole = "superadmin" | "subadmin";
+
 export interface Session {
   email: string;
+  name: string;
+  role: AdminRole;
+  /** "env" = the owner account from the server's settings; "db" = an admin created in the Admins page. */
+  src: "env" | "db";
+  /** Backend admin id (db admins only). */
+  adminId?: string;
+  /** Country codes this admin may work in (a superadmin gets every active country at sign-in). */
+  countries: string[];
+  /** The country they are working in right now; null until they pick one. */
+  country: string | null;
   // Unique per login, so a signed-out session can be revoked server-side.
   sid: string;
   // This admin's session generation when the token was issued. "Sign out
@@ -38,20 +50,33 @@ export interface Session {
   exp: number;
 }
 
-export async function createSessionToken(email: string, secret: string): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  const payload = toBase64Url(
-    encoder.encode(
-      JSON.stringify({
-        email,
-        sid: crypto.randomUUID(),
-        gen: currentGeneration(email),
-        exp: now + SESSION_TTL_SECONDS,
-      }),
-    ),
-  );
+async function signPayload(data: object, secret: string): Promise<string> {
+  const payload = toBase64Url(encoder.encode(JSON.stringify(data)));
   const signature = await crypto.subtle.sign("HMAC", await importKey(secret, "sign"), encoder.encode(payload));
   return `${payload}.${toBase64Url(new Uint8Array(signature))}`;
+}
+
+export interface SessionIdentity {
+  email: string;
+  name: string;
+  role: AdminRole;
+  src: "env" | "db";
+  adminId?: string;
+  countries: string[];
+  country: string | null;
+}
+
+export async function createSessionToken(identity: SessionIdentity, secret: string): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  return signPayload(
+    { ...identity, sid: crypto.randomUUID(), gen: currentGeneration(identity.email), exp: now + SESSION_TTL_SECONDS },
+    secret,
+  );
+}
+
+/** Same session (same sid, same expiry) with a different working country. */
+export async function withCountry(session: Session, country: string, secret: string): Promise<string> {
+  return signPayload({ ...session, country }, secret);
 }
 
 export async function verifySessionToken(token: string | undefined, secret: string | undefined): Promise<Session | null> {
@@ -71,6 +96,12 @@ export async function verifySessionToken(token: string | undefined, secret: stri
 
     const data = JSON.parse(new TextDecoder().decode(fromBase64Url(payload))) as {
       email?: unknown;
+      name?: unknown;
+      role?: unknown;
+      src?: unknown;
+      adminId?: unknown;
+      countries?: unknown;
+      country?: unknown;
       sid?: unknown;
       gen?: unknown;
       exp?: unknown;
@@ -81,7 +112,20 @@ export async function verifySessionToken(token: string | undefined, secret: stri
     // rotating AUTH_SECRET during that rollout invalidated every old token) —
     // treat a missing generation as "older than generation zero" so it's never trusted.
     const gen = typeof data.gen === "number" ? data.gen : -1;
-    return { email: data.email, sid: data.sid, gen, exp: data.exp };
+    // Sessions issued before countries existed were always the owner account: a superadmin who still has to pick a country.
+    const role: AdminRole = data.role === "subadmin" ? "subadmin" : "superadmin";
+    return {
+      email: data.email,
+      name: typeof data.name === "string" && data.name ? data.name : data.email,
+      role,
+      src: data.src === "db" ? "db" : "env",
+      adminId: typeof data.adminId === "string" ? data.adminId : undefined,
+      countries: Array.isArray(data.countries) ? data.countries.filter((c): c is string => typeof c === "string") : [],
+      country: typeof data.country === "string" ? data.country : null,
+      sid: data.sid,
+      gen,
+      exp: data.exp,
+    };
   } catch {
     return null;
   }

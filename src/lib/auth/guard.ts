@@ -15,3 +15,11 @@ export async function requireSession(): Promise<NextResponse | null> {
   if (await getSession()) return null;
   return NextResponse.json({ success: false, message: "Not authenticated" }, { status: 401 });
 }
+
+// Pages and APIs only a superadmin may use (managing other admins).
+export async function requireSuperadmin(): Promise<NextResponse | null> {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ success: false, message: "Not authenticated" }, { status: 401 });
+  if (session.role !== "superadmin") return NextResponse.json({ success: false, message: "Only a superadmin can do this." }, { status: 403 });
+  return null;
+}

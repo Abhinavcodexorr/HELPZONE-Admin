@@ -1,5 +1,6 @@
 "use client";
 
+import { useCountry } from "@/store/CountryContext";
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Briefcase, Check, History, MapPin, Radar, User, Wrench, type LucideIcon } from "lucide-react";
@@ -88,6 +89,7 @@ export function ProviderEditForm({
   backHref: string;
   onSave: (input: UpdateProviderInput) => Promise<void>;
 }) {
+  const { country } = useCountry();
   const orEmpty = (v: string) => (v === "—" ? "" : v);
   const [form, setForm] = useState<UpdateProviderInput>({
     fullName: provider.fullName === "Unnamed provider" ? "" : provider.fullName,
@@ -242,7 +244,7 @@ export function ProviderEditForm({
           </Field>
           <Field label="Expected salary">
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-fg-2">₹</span>
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-fg-2">{country.currencySymbol}</span>
               <input type="number" min={0} className={`${inputClass} pl-7 pr-16`} value={form.monthlySalary ?? ""} onChange={(e) => set("monthlySalary", numberOrNull(e.target.value))} />
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-subtle">/ month</span>
             </div>
@@ -358,7 +360,7 @@ export function ProviderEditForm({
           </Field>
           <Field label="Salary">
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-fg-2">₹</span>
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-fg-2">{country.currencySymbol}</span>
               <input type="number" min={0} className={`${inputClass} pl-7 pr-12`} value={form.lastWorkingExperience.salary ?? ""} onChange={(e) => setJob("salary", numberOrNull(e.target.value))} />
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-subtle">/ mo</span>
             </div>
