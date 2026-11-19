@@ -17,6 +17,7 @@ import {
 } from "@/lib/list-filters";
 import type { User, UserDetail, UserStatus } from "@/types";
 import { BlockUserModal } from "./BlockUserModal";
+import { useAccess } from "@/store/AccessContext";
 import { CustomerCard } from "./CustomerCard";
 import { UserDetailModal } from "./UserDetailModal";
 
@@ -35,6 +36,8 @@ export function UsersTable({
   onUnblock: (ids: string[]) => Promise<void>;
   loadDetail: (id: string) => Promise<UserDetail>;
 }) {
+  const { can } = useAccess();
+  const canManage = can("customers.manage");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [blockingIds, setBlockingIds] = useState<string[] | null>(null);
@@ -165,6 +168,8 @@ export function UsersTable({
       {selectedUsers.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-b border-border bg-primary-soft px-4 py-2.5 text-sm">
           <span className="font-semibold text-primary">{selectedUsers.length} selected</span>
+          {canManage && (
+            <>
           <Button size="sm" variant="danger" onClick={() => setBlockingIds(selectedUsers.filter((u) => u.status === "active").map((u) => u.id))} disabled={!selectedUsers.some((u) => u.status === "active")}>
             <Ban className="h-3.5 w-3.5" /> Block
           </Button>
@@ -179,6 +184,8 @@ export function UsersTable({
           >
             <CheckCircle2 className="h-3.5 w-3.5" /> Unblock
           </Button>
+            </>
+          )}
           <button onClick={() => setSelected(new Set())} className="ml-auto text-xs font-semibold text-muted hover:text-foreground">
             Clear selection
           </button>

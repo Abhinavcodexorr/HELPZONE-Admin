@@ -1,5 +1,6 @@
 "use client";
 
+import { useAccess } from "@/store/AccessContext";
 import { useEffect, useMemo, useState } from "react";
 import { Award, CheckCircle2, PauseCircle, Plus, SearchX } from "lucide-react";
 import type { Plan } from "@/types";
@@ -20,6 +21,7 @@ type Filter = "all" | "active" | "inactive";
 type FormState = { mode: "create" } | { mode: "edit"; plan: Plan };
 
 export function PlansManager() {
+  const { can } = useAccess();
   const { plans, loading, error, reload, create, update, setActive, remove } = usePlans();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
@@ -74,9 +76,11 @@ export function PlansManager() {
         title="Plans"
         description="Membership tiers shown on the customer-facing pricing page"
         actions={
+          can("plans.manage") ? (
           <Button onClick={() => setForm({ mode: "create" })}>
             <Plus className="h-4 w-4" /> Add plan
           </Button>
+          ) : undefined
         }
       />
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useAccess } from "@/store/AccessContext";
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Layers, PauseCircle, Plus, SearchX, Wrench } from "lucide-react";
 import type { Service } from "@/types";
@@ -20,6 +21,7 @@ type Filter = "all" | "active" | "inactive";
 type FormState = { mode: "create"; presetKey?: string; presetName?: string } | { mode: "edit"; service: Service };
 
 export function ServicesManager() {
+  const { can } = useAccess();
   const { services, loading, error, reload, create, update, setActive, remove } = useServices();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
@@ -74,9 +76,11 @@ export function ServicesManager() {
         title="Services"
         description="Manage the service categories providers can offer"
         actions={
+          can("services.manage") ? (
           <Button onClick={() => setForm({ mode: "create" })}>
             <Plus className="h-4 w-4" /> Add service
           </Button>
+          ) : undefined
         }
       />
 

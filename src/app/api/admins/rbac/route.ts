@@ -1,0 +1,10 @@
+import { NextResponse } from "next/server";
+import { requireSuperadmin } from "@/lib/auth/guard";
+import { backendFetch } from "@/lib/server/backend";
+
+export async function GET() {
+  const denied = await requireSuperadmin();
+  if (denied) return denied;
+  const { status, data } = await backendFetch("/api/v1/admin/rbac");
+  return NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });
+}

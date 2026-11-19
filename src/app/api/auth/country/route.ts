@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/guard";
 import { SESSION_COOKIE, withCountry } from "@/lib/auth/session";
+import { fetchAccess } from "@/lib/server/identity";
+import { logAuthEvent } from "@/lib/server/audit-event";
 
 const fail = (message: string, status: number) => NextResponse.json({ success: false, message }, { status });
 
@@ -17,7 +19,13 @@ export async function POST(req: NextRequest) {
     return fail("Invalid request.", 400);
   }
   const country = typeof body.country === "string" ? body.country.trim().toUpperCase() : "";
-  if (!country || !session.countries.includes(country)) return fail("You don't have access to that country.", 403);
+  // Checked against what the admin may use right now, not what they could at sign-in.
+  const access = await fetchAccess(session);
+  if (!access) return fail("Not authenticated", 401);
+  if (!country || !access.countries.includes(country)) return fail("You don't have access to that country.", 403);
+  if (country !== session.country) {
+    await logAuthEvent({ type: "auth.country_switch", email: session.email, name: session.name, role: session.role, source: session.src, adminId: session.adminId, country, details: { from: session.country, to: country } });
+  }
 
   const secure = req.nextUrl.protocol === "https:" || req.headers.get("x-forwarded-proto") === "https";
   const res = NextResponse.json({ success: true, country });

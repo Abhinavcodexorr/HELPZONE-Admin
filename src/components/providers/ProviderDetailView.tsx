@@ -36,6 +36,7 @@ import { cn, digitsOnly, formatDate, formatDateTime, formatRupees, isPdf, timeAg
 import { stayLabel } from "@/lib/stay";
 import { ImageLightbox } from "./ImageLightbox";
 import { RejectModal } from "./RejectModal";
+import { useAccess } from "@/store/AccessContext";
 import { VideoModal } from "./VideoModal";
 
 const statusTone = { pending: "amber", verification: "blue", approved: "green", rejected: "red" } as const;
@@ -133,6 +134,7 @@ export function ProviderDetailView({
   onReject: (id: string, reason: string) => Promise<void>;
 }) {
   const p = provider;
+  const { can } = useAccess();
   const [showReject, setShowReject] = useState(false);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -245,9 +247,11 @@ export function ProviderDetailView({
                   <WhatsAppIcon className="h-[18px] w-[18px]" />
                 </a>
               )}
-              <Link href={editHref} className="flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:brightness-110 active:scale-95">
-                <Pencil className="h-3.5 w-3.5" /> Edit
-              </Link>
+              {can("providers.edit") && (
+                <Link href={editHref} className="flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:brightness-110 active:scale-95">
+                  <Pencil className="h-3.5 w-3.5" /> Edit
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -422,24 +426,26 @@ export function ProviderDetailView({
       </div>
 
       {/* ── Review actions ── */}
-      {canAct && (
+      {canAct && (p.status === "pending" ? can("providers.verify") : can("providers.review")) && (
         <div className="sticky bottom-3 z-20 mt-5 rounded-2xl bg-surface/95 px-4 py-3 shadow-lg ring-1 ring-border backdrop-blur">
           <div className="flex flex-wrap items-center gap-3">
             <p className="min-w-0 flex-1 text-sm text-muted">
               {p.status === "pending" ? "New request. Verify to start the review." : "Documents are under review. Approve or reject."}
             </p>
             {actionError && <p className="text-sm text-danger">{actionError}</p>}
-            {p.status === "verification" && (
+            {p.status === "verification" && can("providers.review") && (
               <Button variant="secondary" className="text-danger" onClick={() => setShowReject(true)} disabled={busy}>
                 <X className="h-4 w-4" /> Reject
               </Button>
             )}
             {p.status === "pending" ? (
-              <Button onClick={() => run(() => onVerify(p.id))} disabled={busy}>
-                <ShieldCheck className="h-4 w-4" /> {busy ? "Working…" : "Verify"}
-              </Button>
+              can("providers.verify") && (
+                <Button onClick={() => run(() => onVerify(p.id))} disabled={busy}>
+                  <ShieldCheck className="h-4 w-4" /> {busy ? "Working…" : "Verify"}
+                </Button>
+              )
             ) : (
-              <Button variant="success" onClick={() => run(() => onApprove(p.id))} disabled={busy}>
+              can("providers.review") && <Button variant="success" onClick={() => run(() => onApprove(p.id))} disabled={busy}>
                 <Check className="h-4 w-4" /> {busy ? "Working…" : "Approve"}
               </Button>
             )}

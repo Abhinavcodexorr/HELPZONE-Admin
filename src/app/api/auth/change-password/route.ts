@@ -6,6 +6,7 @@ import { bumpGeneration, revokeSession } from "@/lib/auth/revocation";
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, createSessionToken } from "@/lib/auth/session";
 import { backendFetch } from "@/lib/server/backend";
 import { setEnvLocalValue } from "@/lib/server/env-file";
+import { logAuthEvent } from "@/lib/server/audit-event";
 
 const fail = (message: string, status: number) => NextResponse.json({ success: false, message }, { status });
 
@@ -67,6 +68,7 @@ export async function POST(req: NextRequest) {
     persisted = await setEnvLocalValue("ADMIN_PASSWORD_HASH", newHash);
   }
   clearFailures(limitKey);
+  await logAuthEvent({ type: "auth.password_changed", email: session.email, name: session.name, role: session.role, source: session.src, adminId: session.adminId, country: session.country });
 
   // Every session — on this device and any other — is signed out, then this
   // device is immediately issued a fresh one so the admin isn't logged out.

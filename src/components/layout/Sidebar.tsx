@@ -3,23 +3,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LayoutDashboard, Users, HardHat, Wrench, Award, Settings, LogOut, Loader2, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, HardHat, Wrench, Award, Settings, LogOut, Loader2, ShieldCheck, ScrollText } from "lucide-react";
 import { cn, displayNameFromEmail } from "@/lib/utils";
 import { Logo } from "@/components/ui/Logo";
 import { signOut } from "@/lib/auth/client";
 import { providerStages } from "@/lib/provider-stages";
 import { useCountry } from "@/store/CountryContext";
+import { useAccess } from "@/store/AccessContext";
 
 const nav = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/providers", label: "Providers", icon: HardHat },
-  { href: "/customers", label: "Customers", icon: Users },
-  { href: "/services", label: "Services", icon: Wrench },
-  { href: "/plans", label: "Plans", icon: Award },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard.view" },
+  { href: "/providers", label: "Providers", icon: HardHat, permission: "providers.view" },
+  { href: "/customers", label: "Customers", icon: Users, permission: "customers.view" },
+  { href: "/services", label: "Services", icon: Wrench, permission: "services.view" },
+  { href: "/plans", label: "Plans", icon: Award, permission: "plans.view" },
+  { href: "/audit-logs", label: "Audit log", icon: ScrollText, permission: "logs.view" },
 ];
 
 // Only a superadmin manages other admins.
-const adminNav = { href: "/admins", label: "Admins", icon: ShieldCheck };
+const adminNav = { href: "/admins", label: "Admins", icon: ShieldCheck, permission: "admins.manage" };
 
 // Shown next to a collapsed-sidebar icon on hover — same dark pill used for
 // chart tooltips elsewhere, so it reads as part of the same design system.
@@ -43,7 +45,9 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const { role } = useCountry();
-  const items = role === "superadmin" ? [...nav, adminNav] : nav;
+  const { can } = useAccess();
+  // Only what this admin's role allows (the Admins page is for superadmins only).
+  const items = [...nav, ...(role === "superadmin" ? [adminNav] : [])].filter((i) => i.permission === "admins.manage" || can(i.permission));
   const [signingOut, setSigningOut] = useState(false);
   const [providersOpen, setProvidersOpen] = useState(true);
   const [providersFlyout, setProvidersFlyout] = useState(false);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useAccess } from "@/store/AccessContext";
 
 const CHECK_MS = 8000;
 
@@ -9,6 +10,7 @@ const CHECK_MS = 8000;
 // clicked on another device) lands back on the login screen on their own,
 // within seconds, with no need to know how to clear cookies themselves.
 export function SessionGuard() {
+  const { update } = useAccess();
   useEffect(() => {
     // A page restored from the browser's back/forward cache skips the server,
     // so it would still show signed-in content after logout. Reloading re-runs
@@ -26,8 +28,18 @@ export function SessionGuard() {
         const res = await fetch("/api/auth/session", { cache: "no-store", signal: AbortSignal.timeout(6000) });
         if (res.status === 401) {
           // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- session ended elsewhere, reload to sign in
-          window.location.href = "/login";
+          window.location.href = "/login?ended=1";
           return;
+        }
+        if (res.ok) {
+          const json = (await res.json().catch(() => null)) as { countryOk?: boolean; access?: { permissions: string[]; template: string } } | null;
+          // The country this tab works in was taken away: choose another.
+          if (json?.countryOk === false) {
+            window.location.href = "/select-country";
+            return;
+          }
+          // Permissions can change while someone is signed in: apply them without a reload.
+          if (json?.access) update(json.access);
         }
       } catch {
         // Offline or the server's restarting: try again next tick, don't sign anyone out for that.
@@ -49,6 +61,6 @@ export function SessionGuard() {
       window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, []);
+  }, [update]);
   return null;
 }

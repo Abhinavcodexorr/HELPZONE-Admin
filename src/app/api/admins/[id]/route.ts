@@ -22,7 +22,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (status === 200 && data?.data?.email && me?.adminId !== id) bumpGeneration(data.data.email);
+  // Rights are read fresh from the backend on every request, so only a new password or a disabled account needs the old sessions ended.
+  if (status === 200 && data?.data?.email && me?.adminId !== id && (body.password || body.isActive === false)) bumpGeneration(data.data.email);
   return NextResponse.json(data, { status });
 }
 

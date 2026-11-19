@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAccess } from "@/store/AccessContext";
 import { Check, Clock, Eye, FileText, MapPin, Pencil, Phone, Radar, ShieldCheck, Trash2, Video, X, type LucideIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
@@ -117,6 +118,11 @@ export function ProviderCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { can } = useAccess();
+  const canVerify = can("providers.verify");
+  const canReview = can("providers.review");
+  const canEdit = can("providers.edit");
+  const canDelete = can("providers.delete");
   const [photoFailed, setPhotoFailed] = useState(false);
   const photo = p.kyc.photoImage && !photoFailed ? p.kyc.photoImage : "";
   const place = [p.city !== "—" ? p.city : "", p.area].filter(Boolean).join(" · ");
@@ -226,30 +232,26 @@ export function ProviderCard({
 
         <div className="mt-4 border-t border-border pt-3.5">
           {p.status === "pending" ? (
-            // New request: start the review, look at it, or remove it.
+            // New request: start the review, look at it, or remove it (each only if this admin's role allows it).
             <div className="flex items-center gap-2">
-              <TextAction icon={ShieldCheck} label="Verify" tone="primary" onClick={onVerify} disabled={busy} />
+              {canVerify && <TextAction icon={ShieldCheck} label="Verify" tone="primary" onClick={onVerify} disabled={busy} />}
               <TextAction icon={Eye} label="View" tone="neutral" onClick={onOpen} />
-              <TextAction icon={Trash2} label="Delete" tone="danger" onClick={onDelete} />
-            </div>
-          ) : p.status === "verification" ? (
-            // In verification: the decision, plus view, edit and delete.
-            <div className="space-y-2.5">
-              <div className="flex items-center gap-2">
-                <TextAction icon={Check} label="Approve" tone="success" onClick={onApprove} disabled={busy} />
-                <TextAction icon={X} label="Reject" tone="danger" onClick={onReject} disabled={busy} />
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <SecondaryAction icon={Eye} label="View" title="View details" onClick={onOpen} />
-                <SecondaryAction icon={Pencil} label="Edit" title="Edit provider" onClick={onEdit} />
-                <SecondaryAction icon={Trash2} label="Delete" title="Delete provider" tone="danger" onClick={onDelete} />
-              </div>
+              {canDelete && <TextAction icon={Trash2} label="Delete" tone="danger" onClick={onDelete} />}
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
-              <SecondaryAction icon={Eye} label="View" title="View details" onClick={onOpen} />
-              <SecondaryAction icon={Pencil} label="Edit" title="Edit provider" onClick={onEdit} />
-              <SecondaryAction icon={Trash2} label="Delete" title="Delete provider" tone="danger" onClick={onDelete} />
+            <div className="space-y-2.5">
+              {/* In verification: the decision. */}
+              {p.status === "verification" && canReview && (
+                <div className="flex items-center gap-2">
+                  <TextAction icon={Check} label="Approve" tone="success" onClick={onApprove} disabled={busy} />
+                  <TextAction icon={X} label="Reject" tone="danger" onClick={onReject} disabled={busy} />
+                </div>
+              )}
+              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${1 + Number(canEdit) + Number(canDelete)}, minmax(0, 1fr))` }}>
+                <SecondaryAction icon={Eye} label="View" title="View details" onClick={onOpen} />
+                {canEdit && <SecondaryAction icon={Pencil} label="Edit" title="Edit provider" onClick={onEdit} />}
+                {canDelete && <SecondaryAction icon={Trash2} label="Delete" title="Delete provider" tone="danger" onClick={onDelete} />}
+              </div>
             </div>
           )}
         </div>

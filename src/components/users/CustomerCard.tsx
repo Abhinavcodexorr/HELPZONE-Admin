@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { labelForCategory } from "@/lib/map-provider";
 import { cn, formatDate } from "@/lib/utils";
 import type { User } from "@/types";
+import { useAccess } from "@/store/AccessContext";
 
 /** A customer as a card, in the same style as the Services cards. */
 export function CustomerCard({
@@ -25,6 +26,8 @@ export function CustomerCard({
   /** Active -> asks to block; Blocked -> unblocks. */
   onToggle: () => void;
 }) {
+  const { can } = useAccess();
+  const canManage = can("customers.manage");
   const active = user.status === "active";
   const place = [user.city !== "—" ? user.city : "", user.state].filter(Boolean).join(", ");
 
@@ -96,6 +99,7 @@ export function CustomerCard({
       {/* Pushes the footer to the bottom so every card in a row is the same height. */}
       <div className="flex-1" />
       <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+        {canManage ? (
         <button
           type="button"
           role="switch"
@@ -117,6 +121,9 @@ export function CustomerCard({
           </span>
           {active ? "Active" : "Blocked"}
         </button>
+        ) : (
+          <span className="text-xs font-medium text-fg-2">{active ? "Active" : "Blocked"}</span>
+        )}
         <span className="text-[11px] text-muted">Joined {formatDate(user.joinedAt)}</span>
       </div>
     </Card>

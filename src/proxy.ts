@@ -37,7 +37,8 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (pathname === "/login") {
+  // ?ended=1: the session was ended on the server (account disabled, signed out elsewhere); show the form.
+  if (pathname === "/login" && !req.nextUrl.searchParams.has("ended")) {
     const url = req.nextUrl.clone();
     url.pathname = safeNextPath(req.nextUrl.searchParams.get("next")) ?? "/dashboard";
     url.search = "";

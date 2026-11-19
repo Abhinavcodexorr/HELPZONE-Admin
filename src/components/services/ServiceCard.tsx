@@ -1,5 +1,6 @@
 "use client";
 
+import { useAccess } from "@/store/AccessContext";
 import { Loader2, Pencil, Trash2, Users } from "lucide-react";
 import type { Service } from "@/types";
 import { Badge } from "@/components/ui/Badge";
@@ -20,6 +21,8 @@ export function ServiceCard({
   onEdit: (service: Service) => void;
   onDelete: (service: Service) => void;
 }) {
+  const { can } = useAccess();
+  const canManage = can("services.manage");
   const active = service.isActive;
 
   return (
@@ -89,6 +92,7 @@ export function ServiceCard({
       {/* Pushes the footer to the bottom so every card in a row is the same height. */}
       <div className="flex-1" />
       <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+        {canManage ? (
         <button
           type="button"
           role="switch"
@@ -115,7 +119,11 @@ export function ServiceCard({
           </span>
           {active ? "Active" : "Inactive"}
         </button>
+        ) : (
+          <span className="text-xs font-medium text-fg-2">{active ? "Active" : "Inactive"}</span>
+        )}
 
+        {canManage && (
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -136,6 +144,7 @@ export function ServiceCard({
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
+        )}
       </div>
     </Card>
   );

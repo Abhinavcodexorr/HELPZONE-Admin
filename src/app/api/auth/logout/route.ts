@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revokeSession } from "@/lib/auth/revocation";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth/session";
+import { logAuthEvent } from "@/lib/server/audit-event";
 
 export async function POST(req: NextRequest) {
   // Revoke the session on the server too, so a copied cookie stops working.
   const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE)?.value, process.env.AUTH_SECRET);
-  if (session) revokeSession(session.sid, session.exp);
+  if (session) {
+    revokeSession(session.sid, session.exp);
+    await logAuthEvent({ type: "auth.logout", email: session.email, name: session.name, role: session.role, source: session.src, adminId: session.adminId, country: session.country });
+  }
 
   const secure = req.nextUrl.protocol === "https:" || req.headers.get("x-forwarded-proto") === "https";
   const res = NextResponse.json({ success: true });

@@ -5,6 +5,7 @@ import { clearFailures, isLimited, recordFailure } from "@/lib/auth/rate-limit";
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, createSessionToken, type SessionIdentity } from "@/lib/auth/session";
 import { backendFetch } from "@/lib/server/backend";
 import { fetchActiveCountries } from "@/lib/server/countries";
+import { logAuthEvent } from "@/lib/server/audit-event";
 import { displayNameFromEmail } from "@/lib/utils";
 
 const fail = (message: string, status: number) =>
@@ -72,7 +73,10 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({ email, password: body.password }),
     }).catch(() => null);
     if (!result) return fail("Can't reach the server right now. Please try again.", 502);
-    if (result.status === 403) return fail(result.data?.message || "This account has been disabled.", 403);
+    if (result.status === 403) {
+      await logAuthEvent({ type: "auth.login_failed", email, success: false, message: "Sign-in refused: account disabled", source: "db" });
+      return fail(result.data?.message || "This account has been disabled.", 403);
+    }
     if (result.status === 200 && result.data?.data) {
       const admin = result.data.data;
       identity = {
@@ -90,15 +94,28 @@ export async function POST(req: NextRequest) {
 
   if (!identity) {
     recordFailure(clientKey);
+    await logAuthEvent({ type: "auth.login_failed", email, success: false, message: "Wrong email or password" });
     return fail("Invalid email or password.", 401);
   }
   if (identity.countries.length === 0) {
+    await logAuthEvent({ type: "auth.login_failed", email: identity.email, name: identity.name, role: identity.role, source: identity.src, success: false, message: "Sign-in refused: no country assigned" });
     return fail("No country is assigned to your account yet. Ask a superadmin to give you access.", 403);
   }
 
   clearFailures(clientKey);
   // One country: use it straight away. More than one: they choose on the next screen.
   if (identity.countries.length === 1) identity.country = identity.countries[0];
+
+  await logAuthEvent({
+    type: "auth.login",
+    email: identity.email,
+    name: identity.name,
+    role: identity.role,
+    source: identity.src,
+    adminId: identity.adminId,
+    country: identity.country,
+    details: { countries: identity.role === "superadmin" ? "all" : identity.countries },
+  });
 
   const secure = req.nextUrl.protocol === "https:" || req.headers.get("x-forwarded-proto") === "https";
   const res = NextResponse.json({ success: true, needsCountry: identity.country === null });

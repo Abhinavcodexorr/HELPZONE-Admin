@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, X } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { AccessGate } from "./AccessGate";
 import { cn, displayNameFromEmail } from "@/lib/utils";
 
 const COLLAPSE_KEY = "hz_sidebar_collapsed";
@@ -85,7 +86,7 @@ export function DashboardShell({ children, userEmail }: { children: React.ReactN
         )}
       >
         <Topbar userName={displayNameFromEmail(userEmail)} onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8"><AccessGate>{children}</AccessGate></main>
       </div>
     </div>
   );

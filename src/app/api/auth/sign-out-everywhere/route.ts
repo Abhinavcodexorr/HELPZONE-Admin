@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/guard";
 import { bumpGeneration } from "@/lib/auth/revocation";
 import { SESSION_COOKIE } from "@/lib/auth/session";
+import { logAuthEvent } from "@/lib/server/audit-event";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -10,6 +11,7 @@ export async function POST(req: NextRequest) {
   // Invalidates this device's session too, same as every other — the admin
   // signs back in once, everywhere, rather than only everywhere-but-here.
   bumpGeneration(session.email);
+  await logAuthEvent({ type: "auth.sign_out_everywhere", email: session.email, name: session.name, role: session.role, source: session.src, adminId: session.adminId, country: session.country });
 
   const secure = req.nextUrl.protocol === "https:" || req.headers.get("x-forwarded-proto") === "https";
   const res = NextResponse.json({ success: true });

@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { formatDate, formatDateTime, formatRupees, timeAgo } from "@/lib/utils";
 import { labelForCategory } from "@/lib/map-provider";
 import type { Subscription, User, UserDetail } from "@/types";
+import { useAccess } from "@/store/AccessContext";
 
 const planTone: Record<Subscription["status"], "green" | "blue" | "gray" | "red"> = {
   active: "green",
@@ -79,6 +80,7 @@ export function UserDetailModal({
   onBlock: () => void;
   onUnblock: () => void;
 }) {
+  const { can } = useAccess();
   const [detail, setDetail] = useState<UserDetail | null>(null);
   const [failed, setFailed] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -247,7 +249,7 @@ export function UserDetailModal({
           <Button variant="secondary" onClick={onClose}>
             Close
           </Button>
-          {blocked ? (
+          {!can("customers.manage") ? null : blocked ? (
             <Button variant="success" onClick={onUnblock} disabled={busy}>
               <CheckCircle2 className="h-4 w-4" /> {busy ? "Unblocking…" : "Unblock"}
             </Button>
